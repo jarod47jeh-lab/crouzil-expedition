@@ -9,5 +9,7 @@ export default async function UsersPage() {
   const {
     data: { user },
   } = await sb.auth.getUser();
-  return <UsersView members={await getMembers(sb)} me={user!.id} canInvite={!!process.env.SUPABASE_SERVICE_ROLE_KEY} />;
+  const members = await getMembers(sb);
+  const me = members.find((m) => m.id === user!.id);
+  return <UsersView members={members} me={user!.id} myName={me?.full_name || me?.email.split("@")[0] || ""} canInvite={!!process.env.SUPABASE_SERVICE_ROLE_KEY} />;
 }

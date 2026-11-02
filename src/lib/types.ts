@@ -163,6 +163,8 @@ export interface Member {
   active: boolean;
   created_at: string;
   last_seen_at: string | null;
+  password_set: boolean;
+  invited_by: string | null;
 }
 
 export interface AuditEntry {

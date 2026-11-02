@@ -1,0 +1,23 @@
+<div style="background:#f6f3ef;padding:32px 16px;font-family:Segoe UI,Helvetica,Arial,sans-serif;color:#221b1d">
+  <div style="max-width:520px;margin:0 auto;background:#ffffff;border:1px solid #e6dfd8;border-radius:20px;padding:32px">
+    <div style="display:inline-block;background:#ce0013;color:#ffffff;font-weight:700;border-radius:12px;padding:8px 12px;font-size:14px">Espace Expédition</div>
+    <h1 style="font-size:22px;margin:20px 0 8px">{{ if .Data.full_name }}Bonjour {{ .Data.full_name }},{{ else }}Bonjour,{{ end }}</h1>
+    <p style="font-size:15px;line-height:1.55;margin:0 0 16px">
+      <b>{{ if .Data.invited_by }}{{ .Data.invited_by }}{{ else }}Le service expédition{{ end }}</b> vous invite à rejoindre
+      l'<b>Espace Expédition</b> de Crouzil Boissons : présences et congés, réparations, erreurs de livraison et journal de bord.
+    </p>
+    {{ if .Data.message }}
+    <div style="background:#f1ece6;border-left:4px solid #ce0013;border-radius:10px;padding:12px 14px;margin:0 0 20px;font-size:14px;line-height:1.5;white-space:pre-wrap">{{ .Data.message }}</div>
+    {{ end }}
+    <p style="margin:24px 0">
+      <a href="{{ .SiteURL }}/auth/accepter?token_hash={{ .TokenHash }}&type=invite"
+         style="display:inline-block;background:#ce0013;color:#ffffff;text-decoration:none;font-weight:700;border-radius:12px;padding:14px 22px;font-size:15px">
+        Activer mon accès
+      </a>
+    </p>
+    <p style="font-size:13px;color:#6e6467;line-height:1.5;margin:0">
+      Vous choisirez ensuite votre mot de passe. Ce lien est valable 24 heures et ne sert qu'une fois.
+      S'il a expiré, demandez à {{ if .Data.invited_by }}{{ .Data.invited_by }}{{ else }}la personne qui vous a invité{{ end }} de vous en renvoyer un.
+    </p>
+  </div>
+</div>

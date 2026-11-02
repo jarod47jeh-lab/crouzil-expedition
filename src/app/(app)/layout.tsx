@@ -10,7 +10,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: member } = await supabase.from("members").select("full_name,email,active").eq("id", user.id).maybeSingle();
+  const { data: member } = await supabase.from("members").select("full_name,email,active,password_set").eq("id", user.id).maybeSingle();
   if (!member?.active) {
     return (
       <div className="grid min-h-dvh place-items-center p-6 text-center">
@@ -24,6 +24,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </div>
     );
   }
+
+  if (!member.password_set) redirect("/bienvenue");
 
   const [leaves, repairs] = await Promise.all([
     supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending").is("deleted_at", null),

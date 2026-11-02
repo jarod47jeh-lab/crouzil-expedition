@@ -47,6 +47,7 @@ scripts/              reprise des données de l'ancien artefact
    - `supabase/migrations/20261101000001_storage.sql`
    - `supabase/migrations/20261102000000_invite_only.sql`
    - `supabase/migrations/20261102000001_harden_functions.sql`
+   - `supabase/migrations/20261102000002_onboarding.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.
@@ -69,6 +70,17 @@ scripts/              reprise des données de l'ancien artefact
 4. De retour dans Supabase, **Authentication › URL Configuration** :
    - **Site URL** : l'adresse Vercel
    - **Redirect URLs** : ajoutez `https://VOTRE-ADRESSE.vercel.app/**`
+
+### Invitations : e-mails personnalisés et lien valable 24 h
+
+1. **Authentication › Emails › Templates** : remplacez le modèle **Invite user** par le contenu de
+   `supabase/templates/invite.html` (sujet : `{{ .Data.invited_by }} vous invite sur l'Espace Expédition`)
+   et le modèle **Reset password** par `supabase/templates/recovery.html` (sujet : `Espace Expédition : choisissez votre mot de passe`).
+   Le lien mène à une page « Activer mon accès » : il n'est consommé qu'au clic, les antivirus de messagerie ne peuvent plus le griller.
+2. **Authentication › Sign In / Providers › Email** : réglez **Email OTP Expiration** sur `86400` (24 h, le maximum).
+
+Dans l'appli, la page **Utilisateurs** propose aussi « Renvoyer » et « Copier le lien » (à envoyer par SMS ou WhatsApp)
+pour toute invitation en attente. À la première connexion, la personne doit choisir son mot de passe.
 
 ### 3. Créer le premier compte
 
