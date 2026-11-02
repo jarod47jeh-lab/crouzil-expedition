@@ -42,9 +42,11 @@ scripts/              reprise des données de l'ancien artefact
 ### 1. Créer la base Supabase
 
 1. Créez un compte sur [supabase.com](https://supabase.com), puis **New project**. Choisissez la région **West EU (Paris)** et notez le mot de passe de la base.
-2. Dans **SQL Editor**, exécutez l'un après l'autre le contenu des deux fichiers :
+2. Dans **SQL Editor**, exécutez l'un après l'autre le contenu des fichiers :
    - `supabase/migrations/20261101000000_init.sql`
    - `supabase/migrations/20261101000001_storage.sql`
+   - `supabase/migrations/20261102000000_invite_only.sql`
+   - `supabase/migrations/20261102000001_harden_functions.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.
@@ -103,3 +105,9 @@ npm run typecheck && npm run lint && npm run build
 ## Mise à jour du fichier Excel des erreurs
 
 Page **Erreurs de livraison › Import et volumes** : glissez le fichier `Suivi_Erreurs.xlsx`. L'appli lit les onglets mois (`09-Sep`, `10-Oct`…), où elle repère toute seule la ligne d'en-têtes (DATE, CLIENT, TYPE D'ERREUR…), et l'onglet **Activité** (nombre de livraisons par jour). Un aperçu indique les nouvelles lignes avant l'enregistrement.
+
+## Environnement en production
+
+- Site : https://crouzil-expedition.vercel.app (Vercel, fonctions à Paris `cdg1`)
+- Base : projet Supabase `crouzil-expedition` (région Paris `eu-west-3`)
+- Chaque push sur `main` est publié automatiquement.
