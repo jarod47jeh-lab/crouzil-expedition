@@ -16,7 +16,7 @@ import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
 import { decideLeave, setDayMarks, setFreelanceCall } from "@/lib/actions/crud";
-import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAMS } from "@/lib/domain/constants";
+import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAM_ORDER, TEAMS, teamMax } from "@/lib/domain/constants";
 import { absencesOn, balances, requestDays } from "@/lib/domain/conges";
 import { DAYS_SHORT, MONTHS, addDays, fmtDate, fmtLong, isHoliday, isWorkDay, iso, nextWorkDay, parse, prevWorkDay, today } from "@/lib/domain/dates";
 import type { DayMark, Employee, FreelanceCall, LeaveRequest, LeaveType, Settings, Team } from "@/lib/types";
@@ -99,7 +99,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
       router.refresh();
     });
 
-  const groups: Team[] = ["chauf", "prep"];
+  const groups: Team[] = [...TEAM_ORDER];
   return (
     <div className="grid gap-6">
       <Card className="flex flex-wrap items-center gap-3 p-3">
@@ -121,14 +121,14 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
           const fixed = team.filter((e) => e.team === g && !e.freelance);
           const free = team.filter((e) => e.team === g && e.freelance);
           const nAbs = fixed.filter((e) => absOf(e.id) && !absOf(e.id)!.pending).length;
-          const max = g === "prep" ? settings.max_abs_prep : settings.max_abs;
+          const max = teamMax(g, settings);
           if (!fixed.length && !free.length) return null;
           return (
             <Card key={g}>
               <CardHeader
                 title={TEAMS[g]}
                 subtitle={`${fixed.length - nAbs} présent(s) sur ${fixed.length}`}
-                actions={nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone="ok">{nAbs} absent(s)</Badge>}
+                actions={max != null && nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone="ok">{nAbs} absent(s)</Badge>}
               />
               <ul className="divide-y divide-line">
                 {fixed.map((e, i) => {
@@ -277,10 +277,10 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
                 ))}
               </tr>
             </thead>
-            {(["chauf", "prep"] as Team[]).map((g) => {
+            {TEAM_ORDER.map((g) => {
               const rows = team.filter((e) => e.team === g);
               if (!rows.length) return null;
-              const max = g === "prep" ? settings.max_abs_prep : settings.max_abs;
+              const max = teamMax(g, settings);
               return (
                 <tbody key={g}>
                   <tr>
@@ -330,12 +330,12 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
                     </tr>
                   ))}
                   <tr className="border-t border-line bg-surface-2/40">
-                    <td className="sticky left-0 z-10 bg-surface-2 px-3 py-1 text-[11px] font-semibold text-muted">Absents (seuil {max})</td>
+                    <td className="sticky left-0 z-10 bg-surface-2 px-3 py-1 text-[11px] font-semibold text-muted">{max != null ? `Absents (seuil ${max})` : "Absents"}</td>
                     {days.map((d) => {
                       if (!isWorkDay(d)) return <td key={d.getDate()} />;
                       const n = absentCount(d, g);
                       return (
-                        <td key={d.getDate()} className={cn("text-center text-[11px] font-bold", n > max ? "text-bad" : n ? "text-ink" : "text-muted/50")}>
+                        <td key={d.getDate()} className={cn("text-center text-[11px] font-bold", max != null && n > max ? "text-bad" : n ? "text-ink" : "text-muted/50")}>
                           {n}
                         </td>
                       );

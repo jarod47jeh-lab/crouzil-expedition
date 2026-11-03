@@ -10,7 +10,7 @@ Accès **sur invitation**, réservé aux responsables et à la direction. Chaque
 |---|---|
 | **Tableau de bord** | Indicateurs du jour (absents, congés à valider, réparations, conformité, erreurs d'hier), messages « À la une », absences des 10 prochains jours, erreurs des 8 dernières semaines, points d'attention, activité récente |
 | **Remontées livraison** | Particularités des prochaines livraisons et récupérations remontées par les commerciaux, clients, direction, livreurs ou préparateurs : niveau (Attention / Info), client, date ou consigne permanente, tournée, provenance. Regroupées par échéance (en retard, aujourd'hui, demain…), suivi « À traiter → Pris en compte → Clos », reprises sur le tableau de bord et dans la fiche client |
-| **Présences et congés** | Vue du jour (statut de chacun, freelances déclenchés), planning mensuel avec saisie rapide au pinceau, demandes (création, validation et refus en un clic, annulation possible), soldes CP / RTT / récupération, statistiques et taux d'absentéisme. Jours fériés calculés automatiquement, alerte au-delà du seuil d'absents |
+| **Présences et congés** | Équipes Chauffeurs, Préparateurs, Service Commande et Bureau Direction. Vue du jour (statut de chacun, freelances déclenchés), planning mensuel avec saisie rapide au pinceau, demandes (création, validation et refus en un clic, annulation possible), soldes CP / RTT / récupération, statistiques et taux d'absentéisme. Jours fériés calculés automatiquement, alerte au-delà du seuil d'absents |
 | **Réparations** | Tableau de bord (ouvertes, bloquantes, délai moyen, coût), liste filtrable, fiche avec suivi du statut en un clic et photos (prises directement au téléphone), message prêt à envoyer au responsable atelier |
 | **Erreurs de livraison** | Jauges de conformité (global, préparation, livraison) face à l'objectif, évolution mensuelle, classements, import du fichier `Suivi_Erreurs.xlsx` sans doublon, saisie des volumes livrés, justifications de l'employé |
 | **Journal de bord** | Événements, remarques, incidents et notes, avec recherche et filtres |
@@ -61,6 +61,7 @@ scripts/              reprise des données de l'ancien artefact
    - `supabase/migrations/20261102000001_harden_functions.sql`
    - `supabase/migrations/20261102000002_onboarding.sql`
    - `supabase/migrations/20261103000000_roles_and_delivery_notes.sql`
+   - `supabase/migrations/20261103000001_teams_office.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.

@@ -1,4 +1,4 @@
-export type Team = "chauf" | "prep";
+export type Team = "chauf" | "prep" | "bureau" | "commande";
 export type LeaveType = "CP" | "RTT" | "REC" | "MAL" | "FOR" | "EVT" | "CSS" | "AUI" | "RDV" | "ABS";
 export type LeaveStatus = "pending" | "approved" | "rejected";
 export type AssetKind = "VEH" | "TRP" | "DIA" | "MAN";

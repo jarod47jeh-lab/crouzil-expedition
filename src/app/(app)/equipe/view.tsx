@@ -8,7 +8,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { EntityForm, useEditor } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
-import { TEAMS } from "@/lib/domain/constants";
+import { TEAM_ORDER, TEAM_TONE, TEAMS } from "@/lib/domain/constants";
 import type { balances } from "@/lib/domain/conges";
 import type { Employee } from "@/lib/types";
 import { nf } from "@/lib/utils";
@@ -35,8 +35,8 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="Effectif actif" value={active.length} icon={<Users className="h-5 w-5" />} />
-        <Kpi index={1} label="Chauffeurs" value={active.filter((r) => r.team === "chauf" && !r.freelance).length} tone="info" />
-        <Kpi index={2} label="Préparateurs" value={active.filter((r) => r.team === "prep").length} tone="violet" />
+        <Kpi index={1} label="Chauffeurs et préparateurs" value={active.filter((r) => (r.team === "chauf" || r.team === "prep") && !r.freelance).length} tone="info" />
+        <Kpi index={2} label="Commande et direction" value={active.filter((r) => r.team === "commande" || r.team === "bureau").length} tone="violet" />
         <Kpi index={3} label="Freelances" value={active.filter((r) => r.freelance).length} tone="warn" />
       </div>
       <DataTable
@@ -48,7 +48,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
         searchText={(r) => `${r.name} ${r.job_title || ""} ${r.phone || ""} ${r.email || ""}`}
         initialSort={{ key: "name", dir: "asc" }}
         filters={[
-          { key: "team", label: "Équipe", options: Object.entries(TEAMS), value: (r) => r.team },
+          { key: "team", label: "Équipe", options: TEAM_ORDER.map((k) => [k, TEAMS[k]]), value: (r) => r.team },
           { key: "st", label: "Statut", options: [["active", "Actifs"], ["inactive", "Sortis"], ["freelance", "Freelances"]], value: (r) => [r.active ? "active" : "inactive", ...(r.freelance ? ["freelance"] : [])] },
         ]}
         columns={[
@@ -73,7 +73,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
             exportValue: (r) => TEAMS[r.team],
             cell: (r) => (
               <div className="flex gap-1.5">
-                <Badge tone={r.team === "prep" ? "violet" : "info"}>{TEAMS[r.team]}</Badge>
+                <Badge tone={TEAM_TONE[r.team]}>{TEAMS[r.team]}</Badge>
                 {r.freelance && <Badge tone="warn">Freelance</Badge>}
                 {!r.active && <Badge>Sorti</Badge>}
               </div>

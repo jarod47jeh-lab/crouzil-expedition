@@ -1,7 +1,7 @@
 import { History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, Empty } from "@/components/ui/card";
-import { ASSET_KINDS, LEAVE_LABEL, LEAVE_STATUS, REPAIR_STATUS, TABLE_LABELS } from "@/lib/domain/constants";
+import { ASSET_KINDS, LEAVE_LABEL, LEAVE_STATUS, REPAIR_STATUS, TABLE_LABELS, TEAMS } from "@/lib/domain/constants";
 import { fmtDateTime } from "@/lib/domain/dates";
 import type { AuditEntry } from "@/lib/types";
 
@@ -32,7 +32,7 @@ function pretty(table: string, field: string, v: unknown) {
   if (field === "status" && table === "leave_requests") return LEAVE_STATUS[k as keyof typeof LEAVE_STATUS]?.label ?? show(v);
   if (field === "type" && (table === "leave_requests" || table === "day_marks")) return LEAVE_LABEL[k as keyof typeof LEAVE_LABEL] ?? (k === "PRES" ? "Présent" : show(v));
   if (field === "kind" && (table === "assets" || table === "repairs")) return ASSET_KINDS[k as keyof typeof ASSET_KINDS]?.label ?? show(v);
-  if (field === "team") return k === "prep" ? "Préparateurs" : k === "chauf" ? "Chauffeurs" : show(v);
+  if (field === "team") return TEAMS[k as keyof typeof TEAMS] ?? show(v);
   if (field === "deleted_at") return v ? "oui" : "non";
   return show(v);
 }

@@ -14,7 +14,7 @@ import { Card, CardHeader, Empty } from "@/components/ui/card";
 import { EntityForm, useEditor } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { restoreRow, trashRows } from "@/lib/actions/crud";
-import { ANNOUNCEMENT_KINDS, LEAVE_COLOR, LEAVE_LABEL, REPAIR_OPEN } from "@/lib/domain/constants";
+import { ANNOUNCEMENT_KINDS, LEAVE_COLOR, LEAVE_LABEL, REPAIR_OPEN, TEAM_ORDER, teamMax } from "@/lib/domain/constants";
 import { absencesOn } from "@/lib/domain/conges";
 import { addDays, daysBetween, fmtDay, fmtLong, fmtShort, iso, isWorkDay, nextWorkDay, prevWorkDay, today, weekStart } from "@/lib/domain/dates";
 import { conformity } from "@/lib/domain/errors";
@@ -52,6 +52,10 @@ export function HomeView(p: Props) {
   const yd = prevWorkDay(t);
   const fixed = p.employees.filter((e) => !e.freelance);
   const absToday = absencesOn(wd, p.leaves, p.marks).filter((a) => fixed.some((e) => e.id === a.employee_id));
+  const overThreshold = TEAM_ORDER.some((g) => {
+    const max = teamMax(g, p.settings);
+    return max != null && absToday.filter((a) => fixed.find((e) => e.id === a.employee_id)?.team === g).length > max;
+  });
   const name = (id: string) => p.employees.find((e) => e.id === id)?.name || "?";
   const open = p.repairs.filter((r) => REPAIR_OPEN.includes(r.status)).sort(sortRepairs);
   const crit = open.filter((r) => r.immobilized || r.urgency === "Bloquant");
@@ -110,7 +114,7 @@ export function HomeView(p: Props) {
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
         {perms.read("remontees") && <Kpi index={0} href="/remontees" label="Remontées livraison" value={notesTodo} icon={<Megaphone className="h-5 w-5" />} tone={notesTodo ? "warn" : "ok"} sub={notesTodo ? "à traiter" : "rien à traiter"} />}
-        {perms.read("conges") && <Kpi index={0} href="/conges" label={wd.getTime() === t.getTime() ? "Absents aujourd'hui" : `Absents ${fmtDay(wd)}`} value={absToday.length} icon={<UserX className="h-5 w-5" />} tone={absToday.length > p.settings.max_abs ? "bad" : "info"} sub={`sur ${fixed.length} collaborateurs`} />}
+        {perms.read("conges") && <Kpi index={0} href="/conges" label={wd.getTime() === t.getTime() ? "Absents aujourd'hui" : `Absents ${fmtDay(wd)}`} value={absToday.length} icon={<UserX className="h-5 w-5" />} tone={overThreshold ? "bad" : "info"} sub={`sur ${fixed.length} collaborateurs`} />}
         {perms.read("conges") && <Kpi index={1} href="/conges?tab=demandes" label="Congés à valider" value={p.pendingCount} icon={<CalendarCheck2 className="h-5 w-5" />} tone={p.pendingCount ? "warn" : "ok"} sub={p.pendingCount ? "demandes en attente" : "rien en attente"} />}
         {perms.read("reparations") && <Kpi index={2} href="/reparations" label="Réparations ouvertes" value={open.length} icon={<Wrench className="h-5 w-5" />} tone="brand" sub={crit.length ? <span className="font-semibold text-bad">{crit.length} bloquante(s) ou immobilisée(s)</span> : "aucune bloquante"} />}
         {perms.read("erreurs") && <Kpi index={3} href="/erreurs" label="Conformité du mois" value={confM ? confM.global : null} decimals={2} suffix=" %" icon={<GaugeIcon className="h-5 w-5" />} tone={confM ? (confM.global >= target ? "ok" : "bad") : "ink"} sub={confM ? `objectif ${nf(target)} %` : "volumes non saisis"} />}

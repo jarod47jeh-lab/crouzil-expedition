@@ -11,7 +11,7 @@ import { Card, CardHeader, Empty } from "@/components/ui/card";
 import { EntityForm, useEditor } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
-import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAMS } from "@/lib/domain/constants";
+import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAM_TONE, TEAMS } from "@/lib/domain/constants";
 import type { balances } from "@/lib/domain/conges";
 import { absencesOn, requestDays } from "@/lib/domain/conges";
 import { MONTHS, addDays, fmtDate, isWorkDay } from "@/lib/domain/dates";
@@ -50,7 +50,7 @@ export function EmployeeDetail({
         subtitle={
           <span className="flex flex-wrap items-center gap-2">
             {emp.job_title}
-            <Badge tone={emp.team === "prep" ? "violet" : "info"}>{TEAMS[emp.team]}</Badge>
+            <Badge tone={TEAM_TONE[emp.team]}>{TEAMS[emp.team]}</Badge>
             {emp.freelance && <Badge tone="warn">Freelance</Badge>}
             {!emp.active && <Badge>Sorti de l&apos;équipe</Badge>}
           </span>
