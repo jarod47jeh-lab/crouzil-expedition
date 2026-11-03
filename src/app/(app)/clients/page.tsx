@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
 import { getClients, getErrors } from "@/lib/data";
 import { ClientsView } from "./view";
@@ -5,6 +6,7 @@ import { ClientsView } from "./view";
 export const metadata = { title: "Clients" };
 
 export default async function ClientsPage() {
+  await requireModule("clients");
   const sb = await createClient();
   const [clients, errors] = await Promise.all([getClients(sb), getErrors(sb)]);
   const stats = new Map<string, { n: number; last: string | null; n90: number }>();

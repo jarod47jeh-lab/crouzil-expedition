@@ -17,6 +17,8 @@ export interface FieldDef {
   hint?: string;
   placeholder?: string;
   step?: string;
+  /** Suggestions proposées pendant la saisie (liste de valeurs) */
+  suggestions?: string[];
   /** Afficher le champ seulement si la condition est vraie */
   when?: (v: Record<string, unknown>) => boolean;
 }
@@ -119,6 +121,7 @@ export function EntityForm({
                 ) : (
                   <Input
                     {...common}
+                    list={f.suggestions ? `dl-${f.name}` : undefined}
                     type={f.type || "text"}
                     step={f.step}
                     value={val == null ? "" : String(val)}
@@ -128,6 +131,15 @@ export function EntityForm({
               </Field>
             );
           })}
+        {fields
+          .filter((f) => f.suggestions)
+          .map((f) => (
+            <datalist key={f.name} id={`dl-${f.name}`}>
+              {f.suggestions!.map((o) => (
+                <option key={o} value={o} />
+              ))}
+            </datalist>
+          ))}
         {extra && <div className="sm:col-span-2">{extra(v)}</div>}
         {err && <p className="rounded-xl bg-bad/10 px-3 py-2 text-sm text-bad sm:col-span-2">{err}</p>}
       </form>

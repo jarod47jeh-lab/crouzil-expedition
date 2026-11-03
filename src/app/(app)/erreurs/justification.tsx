@@ -1,4 +1,5 @@
 "use client";
+import { usePerms } from "@/components/app/perms-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -12,6 +13,7 @@ import type { DeliveryError, Justification } from "@/lib/types";
 
 export function JustificationDialog({ error, justif, onClose }: { error: DeliveryError | null; justif: Justification | null; onClose: () => void }) {
   const router = useRouter();
+  const canEdit = usePerms().write("erreurs");
   const [v, setV] = useState<Record<string, string>>({});
   const [pending, start] = useTransition();
   useEffect(() => {
@@ -48,7 +50,7 @@ export function JustificationDialog({ error, justif, onClose }: { error: Deliver
       subtitle={`${fmtDate(error.date)} · ${error.client_name} · ${error.error_type} · Concerné : ${[error.picker, error.driver, error.other_resp].filter(Boolean).join(", ") || "non indiqué"}`}
       footer={
         <>
-          {justif && (
+          {justif && canEdit && (
             <Button variant="danger" className="mr-auto" onClick={remove} disabled={pending}>
               Effacer
             </Button>
@@ -56,9 +58,11 @@ export function JustificationDialog({ error, justif, onClose }: { error: Deliver
           <Button variant="outline" onClick={onClose}>
             Annuler
           </Button>
-          <Button onClick={save} loading={pending}>
-            Enregistrer
-          </Button>
+          {canEdit && (
+            <Button onClick={save} loading={pending}>
+              Enregistrer
+            </Button>
+          )}
         </>
       }
     >

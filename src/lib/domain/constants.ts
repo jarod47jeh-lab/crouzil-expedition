@@ -80,6 +80,7 @@ export const JOURNAL_CATS = {
 
 export const ANNOUNCEMENT_KINDS = {
   prio: { label: "Priorité", tone: "bad" as Tone },
+  attn: { label: "Attention", tone: "warn" as Tone },
   new: { label: "Nouveauté", tone: "ok" as Tone },
   info: { label: "Info", tone: "info" as Tone },
 };
@@ -97,5 +98,30 @@ export const TABLE_LABELS: Record<string, string> = {
   error_justifications: "Justification",
   journal_entries: "Journal",
   announcements: "À la une",
+  delivery_notes: "Remontée livraison",
   settings: "Réglages",
+};
+
+export const NOTE_LEVELS = {
+  attention: { label: "Attention", tone: "warn" as Tone },
+  info: { label: "Info", tone: "info" as Tone },
+};
+export const NOTE_KINDS = {
+  livraison: "Livraison",
+  recuperation: "Récupération",
+  les_deux: "Livraison et récupération",
+  autre: "Autre",
+};
+export const NOTE_SOURCES = {
+  commercial: "Commercial",
+  client: "Client",
+  direction: "Direction",
+  livreur: "Livreur",
+  preparateur: "Préparateur",
+  autre: "Autre",
+};
+export const NOTE_STATUS = {
+  todo: { label: "À traiter", tone: "bad" as Tone },
+  ack: { label: "Pris en compte", tone: "info" as Tone },
+  done: { label: "Clos", tone: "muted" as Tone },
 };

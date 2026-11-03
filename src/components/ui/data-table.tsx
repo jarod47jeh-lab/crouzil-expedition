@@ -1,4 +1,5 @@
 "use client";
+import { usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -57,6 +58,12 @@ export function DataTable<T extends { id: string }>({
   dense?: boolean;
 }) {
   const router = useRouter();
+  const perms = usePerms();
+  const writable = table ? perms.writeTable(table) : true;
+  if (!writable) {
+    onEdit = undefined;
+    table = undefined;
+  }
   const [q, setQ] = useState("");
   const [f, setF] = useState<Record<string, string>>({});
   const [sort, setSort] = useState(initialSort);

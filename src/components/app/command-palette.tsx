@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 import { Building2, CornerDownLeft, Truck, UserRound, Wrench } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { NAV } from "./nav";
+import { usePerms } from "./perms-context";
 
 type Hit = { id: string; label: string; sub?: string; href: string; group: string };
 
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const perms = usePerms();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
 
@@ -94,6 +96,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                 ))}
                 <Command.Group heading="Aller à" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted">
                   {NAV.flatMap((g) => g.items)
+                    .filter((i) => !i.module || (i.module === "admin" ? perms.admin : perms.read(i.module)))
                     .filter((i) => !q || i.label.toLowerCase().includes(q.toLowerCase()))
                     .map((i) => (
                       <Command.Item key={i.href} value={"nav" + i.href} onSelect={() => go(i.href)} className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-sm data-[selected=true]:bg-surface-2">

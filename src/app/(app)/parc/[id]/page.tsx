@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAssets, getAudit } from "@/lib/data";
@@ -5,6 +6,7 @@ import type { Asset, Repair } from "@/lib/types";
 import { AssetDetail } from "./view";
 
 export default async function AssetPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireModule("parc");
   const { id } = await params;
   const sb = await createClient();
   const { data } = await sb.from("assets").select("*").eq("id", id).maybeSingle();

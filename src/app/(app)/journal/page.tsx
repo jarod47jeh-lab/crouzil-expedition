@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { getJournal } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 import { JournalView } from "./view";
@@ -5,6 +6,7 @@ import { JournalView } from "./view";
 export const metadata = { title: "Journal de bord" };
 
 export default async function JournalPage() {
+  await requireModule("journal");
   const sb = await createClient();
   const {
     data: { user },

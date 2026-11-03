@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite } from "@/components/app/perms-context";
 import Link from "next/link";
 import { Building2, Plus, Repeat, TriangleAlert } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -23,9 +24,11 @@ export function ClientsView({ rows }: { rows: Row[] }) {
         icon={<Building2 className="h-6 w-6" />}
         subtitle="Fiches clients, consignes de livraison et historique des erreurs"
         actions={
+          <CanWrite module="clients">
           <Button onClick={ed.create}>
             <Plus className="h-4 w-4" /> Nouveau client
           </Button>
+          </CanWrite>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">

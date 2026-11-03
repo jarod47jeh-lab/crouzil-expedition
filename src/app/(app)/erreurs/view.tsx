@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -38,6 +39,7 @@ const GROUP_COLOR: Record<string, string> = { Préparation: "#6B4FC8", Livraison
 
 export function ErrorsView(p: Props) {
   const ed = useEditor<DeliveryError>();
+  const canEdit = usePerms().write("erreurs");
   const periods = useMemo(() => {
     const ms = [...new Set(p.errors.map((e) => e.date.slice(0, 7)).concat(Object.keys(p.volumes).map((d) => d.slice(0, 7))))].sort().reverse();
     const ys = [...new Set(ms.map((m) => m.slice(0, 4)))];
@@ -56,6 +58,7 @@ export function ErrorsView(p: Props) {
         subtitle={p.lastImport ? `Dernier import : ${p.lastImport.source}, le ${fmtDateTime(p.lastImport.updated_at)}` : "Relevé et suivi des litiges et erreurs de tournée"}
         actions={
           <>
+            <CanWrite module="erreurs">
             <Link href={q({ tab: "import" })}>
               <Button variant="outline">
                 <Upload className="h-4 w-4" /> Importer l&apos;Excel
@@ -64,6 +67,7 @@ export function ErrorsView(p: Props) {
             <Button onClick={ed.create}>
               <Plus className="h-4 w-4" /> Nouvelle erreur
             </Button>
+            </CanWrite>
           </>
         }
       />
@@ -73,7 +77,7 @@ export function ErrorsView(p: Props) {
         tabs={[
           { key: "dash", label: "Tableau de bord", href: q({ tab: "dash" }) },
           { key: "list", label: "Détail des erreurs", href: q({ tab: "list" }) },
-          { key: "import", label: "Import et volumes", href: q({ tab: "import" }) },
+          ...(canEdit ? [{ key: "import", label: "Import et volumes", href: q({ tab: "import" }) }] : []),
         ]}
       />
       {p.tab !== "import" && (
@@ -100,7 +104,7 @@ export function ErrorsView(p: Props) {
       )}
       {p.tab === "dash" && <Dashboard {...p} inPeriod={inPeriod} label={label} />}
       {p.tab === "list" && <List {...p} inPeriod={inPeriod} onEdit={ed.edit} />}
-      {p.tab === "import" && <ImportTab {...p} />}
+      {p.tab === "import" && canEdit && <ImportTab {...p} />}
       <EntityForm
         open={ed.open}
         onClose={ed.close}

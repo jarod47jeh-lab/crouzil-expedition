@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAudit, getErrors, getLeaves, getMarks } from "@/lib/data";
@@ -6,6 +7,7 @@ import type { Employee } from "@/lib/types";
 import { EmployeeDetail } from "./view";
 
 export default async function EmployeePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ y?: string }> }) {
+  await requireModule("equipe");
   const { id } = await params;
   const sp = await searchParams;
   const year = Number(sp.y) || new Date().getFullYear();

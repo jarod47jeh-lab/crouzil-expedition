@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowRight, CalendarCheck2, CalendarClock, Gauge as GaugeIcon, Megaphone, PackageX, Pencil, Plus, Siren, Trash2, UserX, Wrench } from "lucide-react";
@@ -18,10 +19,12 @@ import { absencesOn } from "@/lib/domain/conges";
 import { addDays, daysBetween, fmtDay, fmtLong, fmtShort, iso, isWorkDay, nextWorkDay, prevWorkDay, today, weekStart } from "@/lib/domain/dates";
 import { conformity } from "@/lib/domain/errors";
 import { sortRepairs } from "@/lib/domain/repairs";
-import type { Announcement, Asset, AuditEntry, DayMark, DeliveryError, Employee, FreelanceCall, LeaveRequest, Repair, Settings } from "@/lib/types";
+import type { DeliveryNote, Announcement, Asset, AuditEntry, DayMark, DeliveryError, Employee, FreelanceCall, LeaveRequest, Repair, Settings } from "@/lib/types";
 import { nf, pct } from "@/lib/utils";
 import { RepairCard } from "./reparations/view";
 import { nextDue } from "./parc/fields";
+import { NoteCard } from "./remontees/note-card";
+import { forDashboard } from "@/lib/domain/notes";
 
 interface Props {
   name: string;
@@ -37,10 +40,12 @@ interface Props {
   announcements: Announcement[];
   assets: Asset[];
   audit: AuditEntry[];
+  notes: DeliveryNote[];
 }
 
 export function HomeView(p: Props) {
   const router = useRouter();
+  const perms = usePerms();
   const ann = useEditor<Announcement>();
   const t = today();
   const wd = isWorkDay(t) ? t : nextWorkDay(t);
@@ -80,7 +85,7 @@ export function HomeView(p: Props) {
     .map((a) => ({ a, n: nextDue(a) }))
     .filter((x) => x.n && -daysBetween(x.n.d) <= 30)
     .sort((x, y) => x.n!.d.localeCompare(y.n!.d));
-  const announcements = p.announcements.filter((a) => !a.expires_on || a.expires_on >= iso(t)).sort((a, b) => ["prio", "new", "info"].indexOf(a.kind) - ["prio", "new", "info"].indexOf(b.kind));
+  const announcements = p.announcements.filter((a) => !a.expires_on || a.expires_on >= iso(t)).sort((a, b) => ["prio", "attn", "new", "info"].indexOf(a.kind) - ["prio", "attn", "new", "info"].indexOf(b.kind));
   const free = p.employees.filter((e) => e.freelance);
 
   const removeAnn = async (a: Announcement) => {
@@ -91,6 +96,8 @@ export function HomeView(p: Props) {
   };
 
   const hour = new Date().getHours();
+  const dash = forDashboard(p.notes);
+  const notesTodo = p.notes.filter((n) => n.status === "todo").length;
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mb-7">
@@ -101,24 +108,50 @@ export function HomeView(p: Props) {
         <p className="mt-1 text-muted">{fmtLong(new Date())}</p>
       </motion.div>
 
-      <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-5">
-        <Kpi index={0} href="/conges" label={wd.getTime() === t.getTime() ? "Absents aujourd'hui" : `Absents ${fmtDay(wd)}`} value={absToday.length} icon={<UserX className="h-5 w-5" />} tone={absToday.length > p.settings.max_abs ? "bad" : "info"} sub={`sur ${fixed.length} collaborateurs`} />
-        <Kpi index={1} href="/conges?tab=demandes" label="Congés à valider" value={p.pendingCount} icon={<CalendarCheck2 className="h-5 w-5" />} tone={p.pendingCount ? "warn" : "ok"} sub={p.pendingCount ? "demandes en attente" : "rien en attente"} />
-        <Kpi index={2} href="/reparations" label="Réparations ouvertes" value={open.length} icon={<Wrench className="h-5 w-5" />} tone="brand" sub={crit.length ? <span className="font-semibold text-bad">{crit.length} bloquante(s) ou immobilisée(s)</span> : "aucune bloquante"} />
-        <Kpi index={3} href="/erreurs" label="Conformité du mois" value={confM ? confM.global : null} decimals={2} suffix=" %" icon={<GaugeIcon className="h-5 w-5" />} tone={confM ? (confM.global >= target ? "ok" : "bad") : "ink"} sub={confM ? `objectif ${nf(target)} %` : "volumes non saisis"} />
-        <Kpi index={4} href="/erreurs?tab=list" label="Erreurs hier" value={errYd.length} icon={<PackageX className="h-5 w-5" />} tone={errYd.length ? "warn" : "ok"} sub={fmtDay(yd)} />
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
+        {perms.read("remontees") && <Kpi index={0} href="/remontees" label="Remontées livraison" value={notesTodo} icon={<Megaphone className="h-5 w-5" />} tone={notesTodo ? "warn" : "ok"} sub={notesTodo ? "à traiter" : "rien à traiter"} />}
+        {perms.read("conges") && <Kpi index={0} href="/conges" label={wd.getTime() === t.getTime() ? "Absents aujourd'hui" : `Absents ${fmtDay(wd)}`} value={absToday.length} icon={<UserX className="h-5 w-5" />} tone={absToday.length > p.settings.max_abs ? "bad" : "info"} sub={`sur ${fixed.length} collaborateurs`} />}
+        {perms.read("conges") && <Kpi index={1} href="/conges?tab=demandes" label="Congés à valider" value={p.pendingCount} icon={<CalendarCheck2 className="h-5 w-5" />} tone={p.pendingCount ? "warn" : "ok"} sub={p.pendingCount ? "demandes en attente" : "rien en attente"} />}
+        {perms.read("reparations") && <Kpi index={2} href="/reparations" label="Réparations ouvertes" value={open.length} icon={<Wrench className="h-5 w-5" />} tone="brand" sub={crit.length ? <span className="font-semibold text-bad">{crit.length} bloquante(s) ou immobilisée(s)</span> : "aucune bloquante"} />}
+        {perms.read("erreurs") && <Kpi index={3} href="/erreurs" label="Conformité du mois" value={confM ? confM.global : null} decimals={2} suffix=" %" icon={<GaugeIcon className="h-5 w-5" />} tone={confM ? (confM.global >= target ? "ok" : "bad") : "ink"} sub={confM ? `objectif ${nf(target)} %` : "volumes non saisis"} />}
+        {perms.read("erreurs") && <Kpi index={4} href="/erreurs?tab=list" label="Erreurs hier" value={errYd.length} icon={<PackageX className="h-5 w-5" />} tone={errYd.length ? "warn" : "ok"} sub={fmtDay(yd)} />}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
         <div className="grid min-w-0 content-start gap-6">
+          {perms.read("remontees") && (
+            <Card className={dash.length ? "border-warn/40" : ""}>
+              <CardHeader
+                title="Livraisons : points d'attention"
+                subtitle="Remontées pour aujourd'hui, demain, échues et consignes permanentes"
+                actions={<Link href="/remontees" className="inline-flex items-center gap-1 text-sm font-semibold text-brand">Tout voir <ArrowRight className="h-4 w-4" /></Link>}
+              />
+              {dash.length ? (
+                <div className="grid gap-3 px-5 pb-5 md:grid-cols-2">
+                  {dash.slice(0, 6).map((n, i) => (
+                    <NoteCard key={n.id} n={n} i={i} compact />
+                  ))}
+                  {dash.length > 6 && (
+                    <Link href="/remontees" className="grid place-items-center rounded-2xl border border-dashed border-line p-4 text-sm font-semibold text-muted hover:text-brand">
+                      + {dash.length - 6} autre(s)
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <Empty icon={<Megaphone className="h-5 w-5" />} title="Rien de particulier pour les prochaines livraisons" />
+              )}
+            </Card>
+          )}
           <Card>
             <CardHeader
               title="À la une"
               subtitle="Priorités et informations pour l'équipe"
               actions={
-                <Button size="sm" onClick={ann.create}>
-                  <Plus className="h-3.5 w-3.5" /> Ajouter
-                </Button>
+                <CanWrite module="any">
+                  <Button size="sm" onClick={ann.create}>
+                    <Plus className="h-3.5 w-3.5" /> Ajouter
+                  </Button>
+                </CanWrite>
               }
             />
             {announcements.length ? (
@@ -135,14 +168,14 @@ export function HomeView(p: Props) {
                           {a.expires_on && ` · jusqu'au ${fmtShort(a.expires_on)}`}
                         </p>
                       </div>
-                      <div className="flex gap-0.5 opacity-50 group-hover:opacity-100">
+                      {perms.write("any") && <div className="flex gap-0.5 opacity-50 group-hover:opacity-100">
                         <button onClick={() => ann.edit(a)} className="grid h-7 w-7 place-items-center rounded-lg hover:bg-surface" aria-label="Modifier">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => removeAnn(a)} className="grid h-7 w-7 place-items-center rounded-lg hover:bg-surface hover:text-bad" aria-label="Retirer">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                      </div>
+                      </div>}
                     </motion.li>
                   );
                 })}
@@ -152,15 +185,15 @@ export function HomeView(p: Props) {
             )}
           </Card>
 
-          <Card>
+          {perms.read("reparations") && <Card>
             <CardHeader title="Réparations en cours" subtitle={`${open.length} non clôturée(s)`} actions={<Link href="/reparations?tab=list" className="inline-flex items-center gap-1 text-sm font-semibold text-brand">Tout voir <ArrowRight className="h-4 w-4" /></Link>} />
             <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2">
               {open.length ? open.slice(0, 6).map((r, i) => <RepairCard key={r.id} r={r} i={i} />) : <Empty title="Aucune réparation en cours" />}
             </div>
-          </Card>
+          </Card>}
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
+            {perms.read("conges") && <Card>
               <CardHeader title="Absences à venir" subtitle="10 prochains jours ouvrés" />
               <div className="px-3 pb-4">
                 <Bars
@@ -175,18 +208,18 @@ export function HomeView(p: Props) {
                   ]}
                 />
               </div>
-            </Card>
-            <Card>
+            </Card>}
+            {perms.read("erreurs") && <Card>
               <CardHeader title="Erreurs de livraison" subtitle="8 dernières semaines" />
               <div className="px-3 pb-4">
                 <Bars data={weekly} x="w" height={220} series={[{ key: "n", label: "Erreurs", color: "var(--brand)" }]} />
               </div>
-            </Card>
+            </Card>}
           </div>
         </div>
 
         <div className="grid min-w-0 content-start gap-6">
-          <Card>
+          {perms.read("conges") && <Card>
             <CardHeader title="Effectif du jour" subtitle={wd.getTime() === t.getTime() ? "Aujourd'hui" : fmtDay(wd)} actions={<Link href="/conges" className="text-sm font-semibold text-brand">Détail</Link>} />
             <div className="grid gap-3 px-5 pb-5">
               {absToday.length ? (
@@ -215,9 +248,9 @@ export function HomeView(p: Props) {
                 </div>
               )}
             </div>
-          </Card>
+          </Card>}
 
-          {(due.length > 0 || crit.length > 0) && (
+          {perms.read("reparations") && (due.length > 0 || crit.length > 0) && (
             <Card className="border-warn/40">
               <CardHeader title="Points d'attention" />
               <ul className="grid gap-2 px-5 pb-5 text-sm">
@@ -260,7 +293,7 @@ export function HomeView(p: Props) {
           )}
 
           <Card>
-            <CardHeader title="Activité récente" actions={<Link href="/historique" className="text-sm font-semibold text-brand">Historique</Link>} />
+            <CardHeader title="Activité récente" actions={perms.admin ? <Link href="/historique" className="text-sm font-semibold text-brand">Historique</Link> : undefined} />
             {p.audit.length ? (
               <ul className="grid gap-4 border-l border-line px-5 pb-5 [margin-left:calc(1.25rem+4px)]">
                 {p.audit.slice(0, 8).map((e) => (
@@ -283,7 +316,7 @@ export function HomeView(p: Props) {
         initial={ann.row ? { ...ann.row } : { kind: "prio", tool: "", body: "" }}
         fields={[
           { name: "kind", label: "Type", type: "select", required: true, options: Object.entries(ANNOUNCEMENT_KINDS).map(([k, v]) => [k, v.label]) },
-          { name: "tool", label: "Concerne", type: "select", options: ["Présences et congés", "Réparations", "Erreurs de livraison", "Journal de bord"] },
+          { name: "tool", label: "Concerne", type: "select", options: ["Livraison", "Récupération", "Présences et congés", "Réparations", "Erreurs de livraison", "Journal de bord"] },
           { name: "body", label: "Message", type: "textarea", required: true },
           { name: "expires_on", label: "Afficher jusqu'au (facultatif)", type: "date" },
         ]}

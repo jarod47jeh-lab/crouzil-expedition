@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -45,9 +46,11 @@ export function CongesView(p: Props) {
         icon={<CalendarCheck2 className="h-6 w-6" />}
         subtitle="Qui est là, planning, demandes et soldes"
         actions={
+          <CanWrite module="conges">
           <Button onClick={leave.create}>
             <Plus className="h-4 w-4" /> Nouvelle demande
           </Button>
+          </CanWrite>
         }
       />
       <Tabs
@@ -74,6 +77,7 @@ export function CongesView(p: Props) {
 // ---------------------------------------------------------------------
 function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
   const router = useRouter();
+  const canEdit = usePerms().write("conges");
   const [busy, start] = useTransition();
   const d = parse(day);
   const team = employees.filter((e) => e.active);
@@ -142,7 +146,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
                         {e.name}
                       </Link>
                       {a && (a.pending ? <Badge tone="warn">En attente : {LEAVE_LABEL[a.type]}</Badge> : <ColorBadge color={LEAVE_COLOR[a.type]}>{LEAVE_LABEL[a.type]}</ColorBadge>)}
-                      <select
+                      {canEdit && <select
                         disabled={busy}
                         aria-label={`Statut de ${e.name}`}
                         value=""
@@ -157,7 +161,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
                           </option>
                         ))}
                         <option value="CLEAR">Annuler la saisie du jour</option>
-                      </select>
+                      </select>}
                     </motion.li>
                   );
                 })}
@@ -169,7 +173,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
                       <span className="min-w-0 flex-1 truncate font-medium">
                         {e.name} <span className="text-xs text-muted">(freelance)</span>
                       </span>
-                      <Button size="sm" variant={on ? "primary" : "outline"} disabled={busy} onClick={() => toggleCall(e.id, !on)}>
+                      <Button size="sm" variant={on ? "primary" : "outline"} disabled={busy || !canEdit} onClick={() => toggleCall(e.id, !on)}>
                         {on ? <><Check className="h-3.5 w-3.5" /> Déclenché</> : "Pas déclenché"}
                       </Button>
                     </li>
@@ -189,6 +193,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
 // ---------------------------------------------------------------------
 function PlanningTab({ year, month, employees, leaves, marks, calls, settings }: Props) {
   const router = useRouter();
+  const canEdit = usePerms().write("conges");
   const [brush, setBrush] = useState<string | null>(null);
   const [, start] = useTransition();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
@@ -235,7 +240,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
         <Button variant="outline" size="icon" onClick={() => go(year, month + 1)} aria-label="Mois suivant">
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+        {canEdit && <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-semibold text-muted">
             <Paintbrush className="h-3.5 w-3.5" /> Saisie rapide :
           </span>
@@ -255,7 +260,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
               <X className="h-3.5 w-3.5" /> Arrêter
             </Button>
           )}
-        </div>
+        </div>}
       </Card>
       {brush && <p className="text-sm text-muted">Cliquez sur les cases pour appliquer « {brush === "PRES" ? "Présent" : LEAVE_LABEL[brush as LeaveType]} ». La saisie jour par jour remplace les demandes validées ce jour-là.</p>}
       <Card className="overflow-hidden">
@@ -352,6 +357,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
 // ---------------------------------------------------------------------
 function RequestsTab({ employees, leaves, onEdit }: Props & { onEdit: (r: LeaveRequest) => void }) {
   const router = useRouter();
+  const canEdit = usePerms().write("conges");
   const [, start] = useTransition();
   const name = (id: string) => employees.find((e) => e.id === id)?.name || "?";
   const decide = (r: LeaveRequest, s: "approved" | "rejected") =>
@@ -388,7 +394,7 @@ function RequestsTab({ employees, leaves, onEdit }: Props & { onEdit: (r: LeaveR
                   {fmtDate(r.start_date)} → {fmtDate(r.end_date)} · <b>{requestDays(r)} j</b>
                 </p>
                 {r.comment && <p className="mt-1 text-sm text-muted">{r.comment}</p>}
-                <div className="mt-3 flex gap-2">
+                {canEdit && <div className="mt-3 flex gap-2">
                   <Button size="sm" onClick={() => decide(r, "approved")}>
                     <Check className="h-3.5 w-3.5" /> Valider
                   </Button>
@@ -398,7 +404,7 @@ function RequestsTab({ employees, leaves, onEdit }: Props & { onEdit: (r: LeaveR
                   <Button size="sm" variant="ghost" className="ml-auto" onClick={() => onEdit(r)}>
                     Modifier
                   </Button>
-                </div>
+                </div>}
               </motion.li>
             ))}
           </ul>

@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite } from "@/components/app/perms-context";
 import { Plus, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -25,9 +26,11 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
         icon={<Users className="h-6 w-6" />}
         subtitle={`Collaborateurs, fonctions et soldes de congés ${year}`}
         actions={
+          <CanWrite module="equipe">
           <Button onClick={ed.create}>
             <Plus className="h-4 w-4" /> Nouveau collaborateur
           </Button>
+          </CanWrite>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">

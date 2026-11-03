@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { ArrowLeft, CalendarPlus, Mail, PackageX, Pencil, Phone } from "lucide-react";
 import { useMemo } from "react";
@@ -26,6 +27,7 @@ export function EmployeeDetail({
 }) {
   const ed = useEditor<Employee>();
   const leave = useEditor<LeaveRequest>();
+  const perms = usePerms();
 
   const monthly = useMemo(() => {
     const rows = MONTHS.map((m) => ({ m: m.slice(0, 3), ...Object.fromEntries(LEAVE_TYPES.map((t) => [t.k, 0])) })) as Record<string, number | string>[];
@@ -66,14 +68,16 @@ export function EmployeeDetail({
                 <Button variant="outline"><Mail className="h-4 w-4" /> E-mail</Button>
               </a>
             )}
-            {!emp.freelance && (
+            {!emp.freelance && perms.write("conges") && (
               <Button variant="secondary" onClick={leave.create}>
                 <CalendarPlus className="h-4 w-4" /> Demande de congé
               </Button>
             )}
-            <Button onClick={() => ed.edit(emp)}>
-              <Pencil className="h-4 w-4" /> Modifier
-            </Button>
+            <CanWrite module="equipe">
+              <Button onClick={() => ed.edit(emp)}>
+                <Pencil className="h-4 w-4" /> Modifier
+              </Button>
+            </CanWrite>
           </>
         }
       />
@@ -105,9 +109,11 @@ export function EmployeeDetail({
                     </span>
                     <span className="text-muted">{requestDays(r)} j</span>
                     <Badge tone={LEAVE_STATUS[r.status].tone} className="ml-auto">{LEAVE_STATUS[r.status].label}</Badge>
-                    <button onClick={() => leave.edit(r)} className="text-muted hover:text-brand" aria-label="Modifier">
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    {perms.write("conges") && (
+                      <button onClick={() => leave.edit(r)} className="text-muted hover:text-brand" aria-label="Modifier">
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>

@@ -150,7 +150,7 @@ export interface JournalEntry extends Row {
 }
 
 export interface Announcement extends Row {
-  kind: "prio" | "new" | "info";
+  kind: "prio" | "attn" | "new" | "info";
   tool: string | null;
   body: string;
   expires_on: string | null;
@@ -165,6 +165,25 @@ export interface Member {
   last_seen_at: string | null;
   password_set: boolean;
   invited_by: string | null;
+  role: "admin" | "editor" | "contributor" | "reader";
+  modules: string[] | null;
+}
+
+export interface DeliveryNote extends Row {
+  level: "attention" | "info";
+  kind: "livraison" | "recuperation" | "les_deux" | "autre";
+  client_id: string | null;
+  client_name: string | null;
+  due_date: string | null;
+  until_date: string | null;
+  permanent: boolean;
+  route: string | null;
+  source: "commercial" | "client" | "direction" | "livreur" | "preparateur" | "autre";
+  source_name: string | null;
+  body: string;
+  status: "todo" | "ack" | "done";
+  handled_at: string | null;
+  created_by: string | null;
 }
 
 export interface AuditEntry {

@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAssets, getAudit } from "@/lib/data";
@@ -5,6 +6,7 @@ import type { Repair } from "@/lib/types";
 import { RepairDetail } from "./view";
 
 export default async function RepairPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireModule("reparations");
   const { id } = await params;
   const sb = await createClient();
   const { data } = await sb.from("repairs").select("*").eq("id", id).maybeSingle();

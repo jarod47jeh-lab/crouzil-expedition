@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
 import { getMembers } from "@/lib/data";
 import { UsersView } from "./view";
@@ -5,6 +6,7 @@ import { UsersView } from "./view";
 export const metadata = { title: "Utilisateurs" };
 
 export default async function UsersPage() {
+  await requireModule("admin");
   const sb = await createClient();
   const {
     data: { user },

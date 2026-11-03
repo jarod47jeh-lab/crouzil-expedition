@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import { AnimatePresence, motion } from "motion/react";
 import { NotebookPen, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,7 @@ import { cn, norm } from "@/lib/utils";
 
 export function JournalView({ entries, me }: { entries: JournalEntry[]; me: string }) {
   const ed = useEditor<JournalEntry>();
+  const canEdit = usePerms().write("journal");
   const router = useRouter();
   const [, start] = useTransition();
   const [q, setQ] = useState("");
@@ -42,9 +44,11 @@ export function JournalView({ entries, me }: { entries: JournalEntry[]; me: stri
         icon={<NotebookPen className="h-6 w-6" />}
         subtitle="Événements, remarques, incidents et notes du quotidien"
         actions={
+          <CanWrite module="journal">
           <Button onClick={ed.create}>
             <Plus className="h-4 w-4" /> Nouvelle entrée
           </Button>
+          </CanWrite>
         }
       />
       <Card className="mb-6 flex flex-wrap items-center gap-2 p-3">
@@ -83,14 +87,14 @@ export function JournalView({ entries, me }: { entries: JournalEntry[]; me: stri
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge tone={c.tone} dot>{c.label}</Badge>
                           {e.author && <span className="text-xs text-muted">par {e.author}</span>}
-                          <div className="ml-auto flex gap-1 opacity-50 transition-opacity group-hover:opacity-100">
+                          {canEdit && <div className="ml-auto flex gap-1 opacity-50 transition-opacity group-hover:opacity-100">
                             <button onClick={() => ed.edit(e)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-surface-2 hover:text-brand" aria-label="Modifier">
                               <Pencil className="h-4 w-4" />
                             </button>
                             <button onClick={() => remove(e)} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-surface-2 hover:text-bad" aria-label="Supprimer">
                               <Trash2 className="h-4 w-4" />
                             </button>
-                          </div>
+                          </div>}
                         </div>
                         <p className="mt-2 whitespace-pre-wrap">{e.body}</p>
                       </motion.li>

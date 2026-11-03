@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite } from "@/components/app/perms-context";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { HistoryCardClient } from "@/components/app/history-client";
@@ -39,12 +40,16 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
         }
         actions={
           <>
-            <Button variant="secondary" onClick={rep.create}>
-              <Plus className="h-4 w-4" /> Signaler un problème
-            </Button>
-            <Button onClick={() => ed.edit(a)}>
-              <Pencil className="h-4 w-4" /> Modifier
-            </Button>
+            <CanWrite module="reparations">
+              <Button variant="secondary" onClick={rep.create}>
+                <Plus className="h-4 w-4" /> Signaler un problème
+              </Button>
+            </CanWrite>
+            <CanWrite module="parc">
+              <Button onClick={() => ed.edit(a)}>
+                <Pencil className="h-4 w-4" /> Modifier
+              </Button>
+            </CanWrite>
           </>
         }
       />

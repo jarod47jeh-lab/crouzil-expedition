@@ -27,6 +27,10 @@ const SCHEMA: Record<string, Record<string, Kind>> = {
   },
   journal_entries: { entry_date: "date", category: "text", body: "text", author: "text" },
   announcements: { kind: "text", tool: "text", body: "text", expires_on: "date" },
+  delivery_notes: {
+    level: "text", kind: "text", client_id: "uuid", client_name: "text", due_date: "date", until_date: "date", permanent: "bool",
+    route: "text", source: "text", source_name: "text", body: "text", status: "text",
+  },
 };
 
 /** Pages à rafraîchir après une écriture sur chaque table */
@@ -43,6 +47,7 @@ const PATHS: Record<string, string[]> = {
   error_justifications: ["/erreurs"],
   journal_entries: ["/journal", "/"],
   announcements: ["/"],
+  delivery_notes: ["/remontees", "/clients", "/"],
   settings: ["/reglages", "/conges", "/reparations", "/erreurs", "/"],
 };
 
@@ -84,7 +89,8 @@ function clean(table: string, values: Record<string, unknown>) {
 
 function frError(message: string) {
   if (/duplicate key|unique/i.test(message)) return "Cet élément existe déjà.";
-  if (/row-level security|permission denied/i.test(message)) return "Accès refusé : votre compte n'est pas autorisé.";
+  if (/row-level security|permission denied|0 rows|no rows|coerce the result|multiple \(or no\) rows/i.test(message))
+    return "Action non autorisée : votre rôle ou vos menus ne permettent pas de modifier ici.";
   if (/violates check constraint/i.test(message)) return "Une valeur n'est pas valide.";
   if (/null value/i.test(message)) return "Un champ obligatoire est vide.";
   return message;
@@ -108,8 +114,9 @@ export async function saveRow(table: string, id: string | null, values: Record<s
 export async function patchRows(table: string, ids: string[], values: Record<string, unknown>): Promise<ActionResult> {
   const supabase = await createClient();
   const data = clean(table, values);
-  const { error } = await supabase.from(table).update(data).in("id", ids);
+  const { data: rows, error } = await supabase.from(table).update(data).in("id", ids).select("id");
   if (error) return { ok: false, error: frError(error.message) };
+  if (!rows?.length) return { ok: false, error: frError("0 rows") };
   revalidate(table);
   return { ok: true };
 }
@@ -118,8 +125,9 @@ export async function patchRows(table: string, ids: string[], values: Record<str
 export async function trashRows(table: string, ids: string[]): Promise<ActionResult> {
   if (!SCHEMA[table]) return { ok: false, error: "Table non autorisée" };
   const supabase = await createClient();
-  const { error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).in("id", ids);
+  const { data: rows, error } = await supabase.from(table).update({ deleted_at: new Date().toISOString() }).in("id", ids).select("id");
   if (error) return { ok: false, error: frError(error.message) };
+  if (!rows?.length) return { ok: false, error: frError("0 rows") };
   revalidate(table);
   return { ok: true };
 }
@@ -127,8 +135,9 @@ export async function trashRows(table: string, ids: string[]): Promise<ActionRes
 export async function restoreRow(table: string, id: string): Promise<ActionResult> {
   if (!SCHEMA[table]) return { ok: false, error: "Table non autorisée" };
   const supabase = await createClient();
-  const { error } = await supabase.from(table).update({ deleted_at: null }).eq("id", id);
+  const { data: rows, error } = await supabase.from(table).update({ deleted_at: null }).eq("id", id).select("id");
   if (error) return { ok: false, error: frError(error.message) };
+  if (!rows?.length) return { ok: false, error: frError("0 rows") };
   revalidate(table);
   return { ok: true };
 }
@@ -298,5 +307,21 @@ export async function removeRepairPhoto(id: string, path: string, repairId: stri
   const { error } = await supabase.from("repair_photos").delete().eq("id", id);
   if (error) return { ok: false, error: frError(error.message) };
   revalidatePath(`/reparations/${repairId}`);
+  return { ok: true };
+}
+
+export async function setNoteStatus(ids: string[], status: "todo" | "ack" | "done"): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("delivery_notes")
+    .update({ status, handled_at: status === "todo" ? null : new Date().toISOString(), handled_by: status === "todo" ? null : user?.id })
+    .in("id", ids)
+    .select("id");
+  if (error) return { ok: false, error: frError(error.message) };
+  if (!data?.length) return { ok: false, error: frError("0 rows") };
+  revalidate("delivery_notes");
   return { ok: true };
 }

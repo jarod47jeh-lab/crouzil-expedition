@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { History } from "lucide-react";
 import { AuditItem } from "@/components/app/history";
 import { Card, Empty } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { HistoryFilters } from "./filters";
 export const metadata = { title: "Historique" };
 
 export default async function HistoryPage({ searchParams }: { searchParams: Promise<{ t?: string; n?: string }> }) {
+  await requireModule("admin");
   const sp = await searchParams;
   const limit = Math.min(1000, Number(sp.n) || 150);
   const entries = await getAudit(undefined, { table: sp.t && TABLE_LABELS[sp.t] ? sp.t : undefined, limit });

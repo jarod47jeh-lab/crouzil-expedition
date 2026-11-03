@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite } from "@/components/app/perms-context";
 import Link from "next/link";
 import { CalendarClock, Forklift, Plus, Siren, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -35,9 +36,11 @@ export function ParcView({ assets, repairs }: { assets: Asset[]; repairs: Repair
         icon={<Truck className="h-6 w-6" />}
         subtitle="Véhicules, transpalettes, diables et autre matériel"
         actions={
+          <CanWrite module="parc">
           <Button onClick={ed.create}>
             <Plus className="h-4 w-4" /> Ajouter
           </Button>
+          </CanWrite>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">

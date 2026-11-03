@@ -1,6 +1,7 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
-import { ArrowLeft, Mail, MapPin, Pencil, Phone } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Pencil, Phone, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Bars } from "@/components/charts/charts";
 import { HistoryCardClient } from "@/components/app/history-client";
@@ -12,10 +13,14 @@ import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { JUSTIF_CONCLUSIONS, MONTHS_SHORT } from "@/lib/domain/constants-ext";
 import { daysBetween, fmtDate } from "@/lib/domain/dates";
-import type { AuditEntry, Client, DeliveryError, Justification } from "@/lib/types";
+import type { AuditEntry, Client, DeliveryError, DeliveryNote, Justification } from "@/lib/types";
+import { isActive } from "@/lib/domain/notes";
+import { NoteCard } from "../../remontees/note-card";
 import { CLIENT_FIELDS } from "../fields";
 
-export function ClientDetail({ client: c, errors, audit, justifs }: { client: Client; errors: DeliveryError[]; audit: AuditEntry[]; justifs: Justification[] }) {
+export function ClientDetail({ client: c, errors, audit, justifs, notes }: { client: Client; errors: DeliveryError[]; audit: AuditEntry[]; justifs: Justification[]; notes: DeliveryNote[] }) {
+  const perms = usePerms();
+  const activeNotes = notes.filter((n) => isActive(n));
   const ed = useEditor<Client>();
   const monthly = useMemo(() => {
     const now = new Date();
@@ -51,9 +56,11 @@ export function ClientDetail({ client: c, errors, audit, justifs }: { client: Cl
                 <Button variant="outline"><Mail className="h-4 w-4" /> E-mail</Button>
               </a>
             )}
-            <Button onClick={() => ed.edit(c)}>
-              <Pencil className="h-4 w-4" /> Modifier
-            </Button>
+            <CanWrite module="clients">
+              <Button onClick={() => ed.edit(c)}>
+                <Pencil className="h-4 w-4" /> Modifier
+              </Button>
+            </CanWrite>
           </>
         }
       />
@@ -65,6 +72,32 @@ export function ClientDetail({ client: c, errors, audit, justifs }: { client: Cl
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <div className="grid min-w-0 content-start gap-6">
+          {perms.read("remontees") && (
+            <Card className={activeNotes.some((n) => n.level === "attention") ? "border-warn/40" : ""}>
+              <CardHeader
+                title="Remontées et consignes de livraison"
+                subtitle={`${activeNotes.length} en cours · ${notes.length} au total`}
+                actions={
+                  perms.contribute && (
+                    <Link href={`/remontees?client=${c.id}`}>
+                      <Button size="sm" variant="secondary">
+                        <Plus className="h-3.5 w-3.5" /> Ajouter
+                      </Button>
+                    </Link>
+                  )
+                }
+              />
+              {activeNotes.length ? (
+                <div className="grid gap-3 px-5 pb-5 md:grid-cols-2">
+                  {activeNotes.map((n, i) => (
+                    <NoteCard key={n.id} n={n} i={i} compact />
+                  ))}
+                </div>
+              ) : (
+                <Empty title="Aucune remontée en cours pour ce client" />
+              )}
+            </Card>
+          )}
           <Card>
             <CardHeader title="Erreurs sur 12 mois" />
             <div className="px-3 pb-4">

@@ -9,6 +9,7 @@ import { signOut } from "@/lib/actions/auth";
 import { NAV } from "./nav";
 import { Logo } from "./logo";
 import { CommandPalette } from "./command-palette";
+import { usePerms } from "./perms-context";
 
 export function Shell({
   children,
@@ -17,9 +18,12 @@ export function Shell({
 }: {
   children: React.ReactNode;
   user: { name: string; email: string };
-  badges: { leaves: number; repairs: number };
+  badges: { leaves: number; repairs: number; notes: number };
 }) {
   const path = usePathname();
+  const perms = usePerms();
+  const visible = (m: string | undefined) => !m || (m === "admin" ? perms.admin : perms.read(m as never));
+  const groups = NAV.map((g) => ({ ...g, items: g.items.filter((it) => visible(it.module)) })).filter((g) => g.items.length);
   const [open, setOpen] = useState(false);
   const [cmd, setCmd] = useState(false);
 
@@ -39,7 +43,7 @@ export function Shell({
 
   const nav = (
     <nav className="flex flex-col gap-5 px-3 pb-6">
-      {NAV.map((g) => (
+      {groups.map((g) => (
         <div key={g.title}>
           <p className="mb-1.5 px-3 text-[11px] font-semibold tracking-[0.08em] text-muted/80 uppercase">{g.title}</p>
           <ul className="grid gap-0.5">

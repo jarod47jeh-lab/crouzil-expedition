@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
 import { getClients, getErrors, getJustifications, getSettings, getVolumes } from "@/lib/data";
 import { ErrorsView } from "./view";
@@ -5,6 +6,7 @@ import { ErrorsView } from "./view";
 export const metadata = { title: "Erreurs de livraison" };
 
 export default async function ErrorsPage({ searchParams }: { searchParams: Promise<{ tab?: string; p?: string }> }) {
+  await requireModule("erreurs");
   const sp = await searchParams;
   const tab = ["dash", "list", "import"].includes(sp.tab || "") ? sp.tab! : "dash";
   const sb = await createClient();

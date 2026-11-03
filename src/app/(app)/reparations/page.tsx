@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
 import { getAssets, getRepairs, getSettings } from "@/lib/data";
 import { RepairsView } from "./view";
@@ -5,6 +6,7 @@ import { RepairsView } from "./view";
 export const metadata = { title: "Réparations" };
 
 export default async function RepairsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  await requireModule("reparations");
   const sp = await searchParams;
   const tab = ["dash", "list", "send"].includes(sp.tab || "") ? sp.tab! : "dash";
   const sb = await createClient();

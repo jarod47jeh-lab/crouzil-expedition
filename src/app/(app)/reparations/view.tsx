@@ -1,4 +1,5 @@
 "use client";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
@@ -37,9 +38,11 @@ export function RepairsView({ tab, repairs, assets, settings }: { tab: string; r
         icon={<Wrench className="h-6 w-6" />}
         subtitle="Pannes et casses des véhicules et du matériel"
         actions={
+          <CanWrite module="reparations">
           <Button onClick={ed.create}>
             <Plus className="h-4 w-4" /> Nouvelle demande
           </Button>
+          </CanWrite>
         }
       />
       <Tabs
@@ -189,6 +192,7 @@ function List({ repairs, onEdit }: { repairs: Repair[]; onEdit: (r: Repair) => v
 
 function ToSend({ repairs, settings }: { repairs: Repair[]; settings: Settings }) {
   const router = useRouter();
+  const canSend = usePerms().write("reparations");
   const [pending, start] = useTransition();
   const [sel, setSel] = useState<string[]>(() => repairs.map((r) => r.id));
   const list = repairs.filter((r) => sel.includes(r.id)).sort(sortRepairs);
@@ -246,7 +250,7 @@ function ToSend({ repairs, settings }: { repairs: Repair[]; settings: Settings }
                 <Mail className="h-4 w-4" /> Ouvrir dans la messagerie
               </Button>
             </a>
-            <Button className="ml-auto" onClick={markSent} loading={pending} disabled={!sel.length}>
+            <Button className="ml-auto" onClick={markSent} loading={pending} disabled={!sel.length || !canSend}>
               <Send className="h-4 w-4" /> Marquer comme transmis
             </Button>
           </div>

@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  DeliveryNote,
   Announcement, Asset, AuditEntry, Client, DayMark, DeliveryError, Employee, FreelanceCall, JournalEntry, Justification, LeaveRequest, Member, Repair, Settings,
 } from "@/lib/types";
 
@@ -121,4 +122,9 @@ export async function getAudit(sb?: SB, opts: { table?: string; rowId?: string; 
   if (opts.rowId) q = q.eq("row_id", opts.rowId);
   const { data } = await q;
   return (data || []) as AuditEntry[];
+}
+
+export async function getNotes(sb?: SB) {
+  sb ||= await createClient();
+  return all<DeliveryNote>(() => sb!.from("delivery_notes").select("*").is("deleted_at", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }));
 }

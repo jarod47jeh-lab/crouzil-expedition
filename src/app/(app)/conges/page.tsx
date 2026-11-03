@@ -1,3 +1,4 @@
+import { requireModule } from "@/lib/guard";
 import { createClient } from "@/lib/supabase/server";
 import { getCalls, getEmployees, getLeaves, getMarks, getSettings } from "@/lib/data";
 import { iso, isWorkDay, nextWorkDay, parse, today } from "@/lib/domain/dates";
@@ -6,6 +7,7 @@ import { CongesView } from "./view";
 export const metadata = { title: "Présences et congés" };
 
 export default async function CongesPage({ searchParams }: { searchParams: Promise<{ tab?: string; d?: string; m?: string; y?: string }> }) {
+  await requireModule("conges");
   const sp = await searchParams;
   const tab = ["jour", "planning", "demandes", "soldes"].includes(sp.tab || "") ? sp.tab! : "jour";
   const t = today();

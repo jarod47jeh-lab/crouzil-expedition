@@ -1,4 +1,5 @@
 "use client";
+import { usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
@@ -39,6 +40,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
   const [uploading, setUploading] = useState(false);
   const [zoom, setZoom] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  const canEdit = usePerms().write("reparations");
   const asset = assets.find((a) => a.id === r.asset_id);
   const age = daysBetween(r.observed_on);
 
@@ -95,12 +97,14 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
         }
         actions={
           <>
+            {canEdit && <>
             <Button variant="danger" onClick={remove} loading={pending}>
               <Trash2 className="h-4 w-4" /> Supprimer
             </Button>
             <Button onClick={() => ed.edit(r)}>
               <Pencil className="h-4 w-4" /> Modifier
             </Button>
+            </>}
           </>
         }
       />
@@ -114,7 +118,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
               <div key={s} className="flex items-center">
                 <button
                   onClick={() => setStatus(s)}
-                  disabled={pending || s === r.status}
+                  disabled={!canEdit || pending || s === r.status}
                   className={cn(
                     "group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all",
                     s === r.status ? "border-brand bg-brand text-brand-ink shadow" : done ? "border-brand/30 bg-brand/10 text-brand" : "border-line text-muted hover:border-brand/40 hover:text-ink",
@@ -131,7 +135,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
           })}
           <button
             onClick={() => setStatus("X")}
-            disabled={pending || r.status === "X"}
+            disabled={!canEdit || pending || r.status === "X"}
             className={cn("ml-3 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-semibold", r.status === "X" ? "border-ink bg-ink text-surface" : "border-line text-muted hover:text-bad")}
           >
             <X className="h-3.5 w-3.5" /> Refusé
@@ -173,7 +177,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
               actions={
                 <>
                   <input ref={input} type="file" accept="image/*" capture="environment" multiple hidden onChange={(e) => upload(e.target.files)} />
-                  <Button variant="outline" size="sm" onClick={() => input.current?.click()} loading={uploading}>
+                  <Button variant="outline" size="sm" onClick={() => input.current?.click()} loading={uploading} disabled={!canEdit}>
                     {uploading ? null : <ImagePlus className="h-4 w-4" />} Ajouter
                   </Button>
                 </>
@@ -185,13 +189,13 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
                   <motion.div key={p.id} layout className="group relative aspect-square overflow-hidden rounded-xl border border-line bg-surface-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={p.url} alt="" className="h-full w-full cursor-zoom-in object-cover transition-transform group-hover:scale-105" onClick={() => setZoom(p.url)} />
-                    <button
+                    {canEdit && <button
                       onClick={() => start(async () => { await removeRepairPhoto(p.id, p.path, r.id); router.refresh(); })}
                       className="absolute top-1.5 right-1.5 grid h-7 w-7 place-items-center rounded-lg bg-black/55 text-white opacity-0 transition-opacity group-hover:opacity-100"
                       aria-label="Supprimer la photo"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </button>}
                   </motion.div>
                 ))}
               </div>
