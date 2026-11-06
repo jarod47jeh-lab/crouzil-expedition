@@ -186,6 +186,19 @@ export interface DeliveryNote extends Row {
   created_by: string | null;
 }
 
+export interface Task extends Row {
+  title: string;
+  section: string;
+  notes: string | null;
+  due_date: string | null;
+  assignee: string | null;
+  done: boolean;
+  done_at: string | null;
+  done_by: string | null;
+  position: number;
+  created_by: string | null;
+}
+
 export interface AuditEntry {
   id: number;
   at: string;

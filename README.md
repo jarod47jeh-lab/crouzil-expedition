@@ -13,6 +13,7 @@ Accès **sur invitation**, réservé aux responsables et à la direction. Chaque
 | **Présences et congés** | Équipes Chauffeurs, Préparateurs, Service Commande et Bureau Direction. Vue du jour (statut de chacun, freelances déclenchés), planning mensuel avec saisie rapide au pinceau, demandes (création, validation et refus en un clic, annulation possible), soldes CP / RTT / récupération, statistiques et taux d'absentéisme. Jours fériés calculés automatiquement, alerte au-delà du seuil d'absents |
 | **Réparations** | Tableau de bord (ouvertes, bloquantes, délai moyen, coût), liste filtrable, fiche avec suivi du statut en un clic et photos (prises directement au téléphone), message prêt à envoyer au responsable atelier |
 | **Erreurs de livraison** | Jauges de conformité (global, préparation, livraison) face à l'objectif, évolution mensuelle, classements, import du fichier `Suivi_Erreurs.xlsx` sans doublon, saisie des volumes livrés, justifications de l'employé |
+| **To do list** | Tâches regroupées par rubrique (« Cette semaine », « D'ici fin novembre »…), cochées en un clic, avec échéance, personne concernée et précisions. Les tâches faites se replient sous « Fait », celles en retard ou du jour sont signalées dans le menu |
 | **Journal de bord** | Événements, remarques, incidents et notes, avec recherche et filtres |
 | **Équipe / Parc / Clients** | Fiches complètes : soldes et absences du collaborateur, réparations et échéances du véhicule (CT, entretien, assurance), erreurs et consignes de livraison du client |
 | **Administration** | Historique de toutes les modifications (qui, quoi, quand), corbeille restaurable 30 jours, invitation des comptes avec rôle et menus, désactivation, réglages |
@@ -62,6 +63,7 @@ scripts/              reprise des données de l'ancien artefact
    - `supabase/migrations/20261102000002_onboarding.sql`
    - `supabase/migrations/20261103000000_roles_and_delivery_notes.sql`
    - `supabase/migrations/20261103000001_teams_office.sql`
+   - `supabase/migrations/20261106000000_tasks.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.

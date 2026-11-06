@@ -111,6 +111,7 @@ const MODULE_KEYS = [
   "erreurs",
   "remontees",
   "journal",
+  "taches",
   "equipe",
   "parc",
   "clients",

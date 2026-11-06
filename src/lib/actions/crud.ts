@@ -31,6 +31,7 @@ const SCHEMA: Record<string, Record<string, Kind>> = {
     level: "text", kind: "text", client_id: "uuid", client_name: "text", due_date: "date", until_date: "date", permanent: "bool",
     route: "text", source: "text", source_name: "text", body: "text", status: "text",
   },
+  tasks: { title: "text", section: "text", notes: "text", due_date: "date", assignee: "text", position: "int" },
 };
 
 /** Pages à rafraîchir après une écriture sur chaque table */
@@ -48,6 +49,7 @@ const PATHS: Record<string, string[]> = {
   journal_entries: ["/journal", "/"],
   announcements: ["/"],
   delivery_notes: ["/remontees", "/clients", "/"],
+  tasks: ["/taches", "/"],
   settings: ["/reglages", "/conges", "/reparations", "/erreurs", "/"],
 };
 
@@ -323,5 +325,34 @@ export async function setNoteStatus(ids: string[], status: "todo" | "ack" | "don
   if (error) return { ok: false, error: frError(error.message) };
   if (!data?.length) return { ok: false, error: frError("0 rows") };
   revalidate("delivery_notes");
+  return { ok: true };
+}
+
+/** Cocher / décocher des tâches */
+export async function setTaskDone(ids: string[], done: boolean): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: rows, error } = await supabase
+    .from("tasks")
+    .update({ done, done_at: done ? new Date().toISOString() : null, done_by: done ? user?.id : null })
+    .in("id", ids)
+    .select("id");
+  if (error) return { ok: false, error: frError(error.message) };
+  if (!rows?.length) return { ok: false, error: frError("0 rows") };
+  revalidate("tasks");
+  return { ok: true };
+}
+
+/** Renommer une rubrique (toutes ses tâches) */
+export async function renameSection(from: string, to: string): Promise<ActionResult> {
+  const name = to.trim();
+  if (!name) return { ok: false, error: "Le nom de la rubrique est vide." };
+  const supabase = await createClient();
+  const { data: rows, error } = await supabase.from("tasks").update({ section: name }).eq("section", from).is("deleted_at", null).select("id");
+  if (error) return { ok: false, error: frError(error.message) };
+  if (!rows?.length) return { ok: false, error: frError("0 rows") };
+  revalidate("tasks");
   return { ok: true };
 }

@@ -1,5 +1,5 @@
 export type Role = "admin" | "editor" | "contributor" | "reader";
-export type ModuleKey = "conges" | "reparations" | "erreurs" | "remontees" | "journal" | "equipe" | "parc" | "clients";
+export type ModuleKey = "conges" | "reparations" | "erreurs" | "remontees" | "journal" | "taches" | "equipe" | "parc" | "clients";
 
 export const ROLES: Record<Role, { label: string; help: string }> = {
   admin: { label: "Administrateur", help: "Tout, y compris utilisateurs, réglages, historique complet et corbeille" },
@@ -14,6 +14,7 @@ export const MODULES: { key: ModuleKey; label: string; href: string }[] = [
   { key: "reparations", label: "Réparations", href: "/reparations" },
   { key: "erreurs", label: "Erreurs de livraison", href: "/erreurs" },
   { key: "journal", label: "Journal de bord", href: "/journal" },
+  { key: "taches", label: "To do list", href: "/taches" },
   { key: "equipe", label: "Équipe", href: "/equipe" },
   { key: "parc", label: "Parc et matériel", href: "/parc" },
   { key: "clients", label: "Clients", href: "/clients" },
@@ -31,6 +32,7 @@ export const TABLE_MODULE: Record<string, ModuleKey | "any"> = {
   delivery_errors: "erreurs",
   journal_entries: "journal",
   delivery_notes: "remontees",
+  tasks: "taches",
   announcements: "any",
 };
 

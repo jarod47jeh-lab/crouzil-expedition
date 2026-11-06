@@ -1,13 +1,13 @@
 import type { ModuleKey } from "@/lib/perms";
 import {
-  Megaphone,
+  Megaphone, ListTodo,
   LayoutDashboard, CalendarCheck2, Wrench, PackageX, NotebookPen, Users, Truck, Building2, History, Trash2, ShieldCheck, Settings2,
 } from "lucide-react";
 
 export const NAV = [
   {
     title: "Pilotage",
-    items: [{ href: "/", label: "Tableau de bord", icon: LayoutDashboard, badge: undefined as undefined | "leaves" | "repairs" | "notes", module: undefined as undefined | ModuleKey | "admin" }],
+    items: [{ href: "/", label: "Tableau de bord", icon: LayoutDashboard, badge: undefined as undefined | "leaves" | "repairs" | "notes" | "tasks", module: undefined as undefined | ModuleKey | "admin" }],
   },
   {
     title: "Opérations",
@@ -16,6 +16,7 @@ export const NAV = [
       { href: "/conges", label: "Présences et congés", icon: CalendarCheck2, badge: "leaves" as const, module: "conges" as const },
       { href: "/reparations", label: "Réparations", icon: Wrench, badge: "repairs" as const, module: "reparations" as const },
       { href: "/erreurs", label: "Erreurs de livraison", icon: PackageX, badge: undefined, module: "erreurs" as const },
+      { href: "/taches", label: "To do list", icon: ListTodo, badge: "tasks" as const, module: "taches" as const },
       { href: "/journal", label: "Journal de bord", icon: NotebookPen, badge: undefined, module: "journal" as const },
     ],
   },

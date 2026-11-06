@@ -18,7 +18,7 @@ export function Shell({
 }: {
   children: React.ReactNode;
   user: { name: string; email: string };
-  badges: { leaves: number; repairs: number; notes: number };
+  badges: { leaves: number; repairs: number; notes: number; tasks: number };
 }) {
   const path = usePathname();
   const perms = usePerms();

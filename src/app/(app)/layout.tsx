@@ -29,16 +29,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!member.password_set) redirect("/bienvenue");
 
-  const [leaves, repairs, notes] = await Promise.all([
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Paris" });
+  const [leaves, repairs, notes, tasks] = await Promise.all([
     supabase.from("leave_requests").select("id", { count: "exact", head: true }).eq("status", "pending").is("deleted_at", null),
     supabase.from("repairs").select("id", { count: "exact", head: true }).eq("status", "A").is("deleted_at", null),
     supabase.from("delivery_notes").select("id", { count: "exact", head: true }).eq("status", "todo").is("deleted_at", null),
+    // tâches en retard ou pour aujourd'hui
+    supabase.from("tasks").select("id", { count: "exact", head: true }).eq("done", false).lte("due_date", today).is("deleted_at", null),
   ]);
   void supabase.from("members").update({ last_seen_at: new Date().toISOString() }).eq("id", user.id).then(() => {});
 
   return (
     <PermsProvider value={{ role: (member.role as Role) || "reader", modules: (member.modules as ModuleKey[] | null) ?? null }}>
-      <Shell user={{ name: member.full_name || member.email, email: member.email }} badges={{ leaves: leaves.count || 0, repairs: repairs.count || 0, notes: notes.count || 0 }}>
+      <Shell user={{ name: member.full_name || member.email, email: member.email }} badges={{ leaves: leaves.count || 0, repairs: repairs.count || 0, notes: notes.count || 0, tasks: tasks.count || 0 }}>
         {children}
       </Shell>
     </PermsProvider>

@@ -105,6 +105,7 @@ export const TABLE_LABELS: Record<string, string> = {
   journal_entries: "Journal",
   announcements: "À la une",
   delivery_notes: "Remontée livraison",
+  tasks: "To do list",
   settings: "Réglages",
 };
 
