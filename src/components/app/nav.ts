@@ -1,40 +1,89 @@
 import type { ModuleKey } from "@/lib/perms";
 import {
-  Megaphone, ListTodo,
-  LayoutDashboard, CalendarCheck2, Wrench, PackageX, NotebookPen, Users, Truck, Building2, History, Trash2, ShieldCheck, Settings2,
+  Megaphone, LayoutDashboard, CalendarCheck2, Wrench, PackageX, NotebookPen, Users, Truck, Building2, History, Trash2, ShieldCheck, Settings2,
+  ListTodo, Sun, Warehouse, UsersRound, CheckSquare, HardHat, type LucideIcon,
 } from "lucide-react";
 
-export const NAV = [
+export type Badge = "leaves" | "repairs" | "notes" | "tasks";
+export interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  badge?: Badge;
+  module?: ModuleKey | "admin";
+}
+export interface Space {
+  key: string;
+  title: string;
+  /** Nom court pour la barre d'onglets du téléphone */
+  short: string;
+  icon: LucideIcon;
+  items: NavItem[];
+}
+
+/** Espaces métier : l'appli est organisée par usage, pas par table. */
+export const SPACES: Space[] = [
+  { key: "jour", title: "Aujourd'hui", short: "Aujourd'hui", icon: Sun, items: [{ href: "/", label: "Accueil", icon: LayoutDashboard }] },
   {
-    title: "Pilotage",
-    items: [{ href: "/", label: "Tableau de bord", icon: LayoutDashboard, badge: undefined as undefined | "leaves" | "repairs" | "notes" | "tasks", module: undefined as undefined | ModuleKey | "admin" }],
-  },
-  {
-    title: "Opérations",
+    key: "livraisons",
+    title: "Livraisons",
+    short: "Livraisons",
+    icon: Truck,
     items: [
-      { href: "/remontees", label: "Remontées livraison", icon: Megaphone, badge: "notes" as const, module: "remontees" as const },
-      { href: "/conges", label: "Présences et congés", icon: CalendarCheck2, badge: "leaves" as const, module: "conges" as const },
-      { href: "/reparations", label: "Réparations", icon: Wrench, badge: "repairs" as const, module: "reparations" as const },
-      { href: "/erreurs", label: "Erreurs de livraison", icon: PackageX, badge: undefined, module: "erreurs" as const },
-      { href: "/taches", label: "To do list", icon: ListTodo, badge: "tasks" as const, module: "taches" as const },
-      { href: "/journal", label: "Journal de bord", icon: NotebookPen, badge: undefined, module: "journal" as const },
+      { href: "/remontees", label: "Remontées clients", icon: Megaphone, badge: "notes", module: "remontees" },
+      { href: "/erreurs", label: "Erreurs et conformité", icon: PackageX, module: "erreurs" },
+      { href: "/clients", label: "Clients", icon: Building2, module: "clients" },
     ],
   },
   {
-    title: "Référentiels",
+    key: "depot",
+    title: "Dépôt",
+    short: "Dépôt",
+    icon: Warehouse,
     items: [
-      { href: "/equipe", label: "Équipe", icon: Users, badge: undefined, module: "equipe" as const },
-      { href: "/parc", label: "Parc et matériel", icon: Truck, badge: undefined, module: "parc" as const },
-      { href: "/clients", label: "Clients", icon: Building2, badge: undefined, module: "clients" as const },
+      { href: "/depot", label: "Plan du dépôt", icon: Warehouse, module: "parc" },
+      { href: "/parc", label: "Véhicules et matériel", icon: Truck, module: "parc" },
+      { href: "/reparations", label: "Réparations", icon: Wrench, badge: "repairs", module: "reparations" },
     ],
   },
   {
-    title: "Administration",
+    key: "equipes",
+    title: "Équipes",
+    short: "Équipes",
+    icon: UsersRound,
     items: [
-      { module: "admin" as const, href: "/historique", label: "Historique", icon: History, badge: undefined },
-      { module: "admin" as const, href: "/corbeille", label: "Corbeille", icon: Trash2, badge: undefined },
-      { module: "admin" as const, href: "/utilisateurs", label: "Utilisateurs", icon: ShieldCheck, badge: undefined },
-      { module: "admin" as const, href: "/reglages", label: "Réglages", icon: Settings2, badge: undefined },
+      { href: "/conges", label: "Planning et congés", icon: CalendarCheck2, badge: "leaves", module: "conges" },
+      { href: "/equipe", label: "Collaborateurs", icon: Users, module: "equipe" },
+      { href: "/equipements", label: "Tenues et équipements", icon: HardHat, module: "equipe" },
+    ],
+  },
+  {
+    key: "actions",
+    title: "Actions",
+    short: "Actions",
+    icon: CheckSquare,
+    items: [
+      { href: "/taches", label: "To do list", icon: ListTodo, badge: "tasks", module: "taches" },
+      { href: "/journal", label: "Journal de bord", icon: NotebookPen, module: "journal" },
     ],
   },
 ];
+
+export const ADMIN: Space = {
+  key: "admin",
+  title: "Administration",
+  short: "Admin",
+  icon: ShieldCheck,
+  items: [
+    { module: "admin", href: "/utilisateurs", label: "Utilisateurs et droits", icon: ShieldCheck },
+    { module: "admin", href: "/reglages", label: "Réglages", icon: Settings2 },
+    { module: "admin", href: "/historique", label: "Historique", icon: History },
+    { module: "admin", href: "/corbeille", label: "Corbeille", icon: Trash2 },
+  ],
+};
+
+/** Ancien format, utilisé par la recherche */
+export const NAV = [...SPACES, ADMIN].map((s) => ({ title: s.title, items: s.items }));
+
+export const isActive = (path: string, href: string) => (href === "/" ? path === "/" : path === href || path.startsWith(href + "/"));
+export const spaceOf = (path: string) => [...SPACES, ADMIN].find((s) => s.items.some((i) => isActive(path, i.href)));

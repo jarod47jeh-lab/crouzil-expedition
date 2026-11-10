@@ -11,7 +11,7 @@ import { Badge, ColorBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, Empty } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { useEditor } from "@/components/ui/entity-form";
+import { useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
@@ -37,6 +37,7 @@ interface Props {
 
 export function CongesView(p: Props) {
   const leave = useEditor<LeaveRequest>();
+  useOpenOnNew(leave.create);
   const pending = p.leaves.filter((r) => r.status === "pending");
   const q = (o: Record<string, string | number>) => "/conges?" + new URLSearchParams(Object.entries(o).map(([k, v]) => [k, String(v)])).toString();
   return (
@@ -139,7 +140,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="flex items-center gap-3 px-5 py-2.5"
+                      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-5 py-2.5"
                     >
                       <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", a ? (a.pending ? "bg-warn" : "bg-bad") : "bg-ok")} />
                       <Link href={`/equipe/${e.id}`} className="min-w-0 flex-1 truncate font-medium hover:text-brand">

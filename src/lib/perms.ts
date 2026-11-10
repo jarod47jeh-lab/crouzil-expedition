@@ -33,6 +33,8 @@ export const TABLE_MODULE: Record<string, ModuleKey | "any"> = {
   journal_entries: "journal",
   delivery_notes: "remontees",
   tasks: "taches",
+  equipment_items: "equipe",
+  equipment_issues: "equipe",
   announcements: "any",
 };
 

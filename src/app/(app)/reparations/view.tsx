@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, Empty } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { useEditor } from "@/components/ui/entity-form";
+import { useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
@@ -28,6 +28,7 @@ const CAT_COLOR = ["#CE0013", "#E8590C", "#B7791F", "#6B4FC8", "#2F6FDE", "#6B75
 
 export function RepairsView({ tab, repairs, assets, settings }: { tab: string; repairs: Repair[]; assets: Asset[]; settings: Settings }) {
   const ed = useEditor<Repair>();
+  useOpenOnNew(ed.create);
   const router = useRouter();
   const open = repairs.filter((r) => REPAIR_OPEN.includes(r.status));
   const toSend = open.filter((r) => r.status === "A");

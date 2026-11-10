@@ -1,4 +1,5 @@
 "use client";
+import { compressImage } from "@/lib/image";
 import { usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,16 +23,7 @@ import { RepairForm } from "../shared";
 
 const FLOW: RepairStatus[] = ["A", "T", "V", "R", "F"];
 
-async function compress(file: File): Promise<Blob> {
-  if (!file.type.startsWith("image/")) return file;
-  const img = await createImageBitmap(file);
-  const max = 1600, s = Math.min(1, max / Math.max(img.width, img.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(img.width * s);
-  c.height = Math.round(img.height * s);
-  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-  return new Promise((res) => c.toBlob((b) => res(b || file), "image/jpeg", 0.82));
-}
+const compress = (f: File) => compressImage(f);
 
 export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Repair; assets: Asset[]; audit: AuditEntry[]; photos: { id: string; path: string; url: string }[] }) {
   const router = useRouter();

@@ -28,6 +28,33 @@ export interface Employee extends Row {
   hired_on: string | null;
   notes: string | null;
   active: boolean;
+  size_top: string | null;
+  size_bottom: string | null;
+  size_shoe: string | null;
+  size_gloves: string | null;
+}
+
+export type SizeKind = "top" | "bottom" | "shoe" | "gloves";
+export interface EquipmentItem extends Row {
+  name: string;
+  category: "tenue" | "epi" | "outil" | "acces";
+  norm: string | null;
+  sized: SizeKind | null;
+  qty_per_person: number;
+  renewal_months: number | null;
+  teams: Team[] | null;
+  position: number;
+  active: boolean;
+}
+export interface EquipmentIssue extends Row {
+  employee_id: string;
+  item_id: string;
+  size: string | null;
+  qty: number;
+  issued_on: string;
+  signed: boolean;
+  returned_on: string | null;
+  note: string | null;
 }
 
 export interface LeaveRequest extends Row {

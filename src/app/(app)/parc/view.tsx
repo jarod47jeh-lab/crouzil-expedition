@@ -1,4 +1,7 @@
 "use client";
+import { DepotBanner } from "@/components/depot/banner";
+import { buildVehicles } from "@/components/depot/summary";
+import { minimalSummary } from "@/components/depot/summary-empty";
 import { CanWrite } from "@/components/app/perms-context";
 import Link from "next/link";
 import { CalendarClock, Forklift, Plus, Siren, Truck } from "lucide-react";
@@ -43,6 +46,7 @@ export function ParcView({ assets, repairs }: { assets: Asset[]; repairs: Repair
           </CanWrite>
         }
       />
+      <DepotBanner focus="parking" caption="Parking camions" summary={minimalSummary(buildVehicles(assets, repairs, new Date().toISOString().slice(0, 10)))} />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="Véhicules" value={assets.filter((a) => a.kind === "VEH" && a.active).length} icon={<Truck className="h-5 w-5" />} tone="info" />
         <Kpi index={1} label="Matériel" value={assets.filter((a) => a.kind !== "VEH" && a.active).length} icon={<Forklift className="h-5 w-5" />} tone="violet" />

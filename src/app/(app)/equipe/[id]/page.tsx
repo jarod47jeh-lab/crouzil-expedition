@@ -1,7 +1,7 @@
 import { requireModule } from "@/lib/guard";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getAudit, getErrors, getLeaves, getMarks } from "@/lib/data";
+import { getAudit, getEquipment, getErrors, getLeaves, getMarks } from "@/lib/data";
 import { balances } from "@/lib/domain/conges";
 import type { Employee } from "@/lib/types";
 import { EmployeeDetail } from "./view";
@@ -15,11 +15,12 @@ export default async function EmployeePage({ params, searchParams }: { params: P
   const { data } = await sb.from("employees").select("*").eq("id", id).maybeSingle();
   if (!data) notFound();
   const emp = data as Employee;
-  const [reqs, marks, errors, audit] = await Promise.all([
+  const [reqs, marks, errors, audit, eq] = await Promise.all([
     getLeaves(sb, `${year}-01-01`, `${year}-12-31`),
     getMarks(sb, `${year}-01-01`, `${year}-12-31`),
     getErrors(sb),
     getAudit(sb, { table: "employees", rowId: id, limit: 30 }),
+    getEquipment(sb),
   ]);
   const mine = reqs.filter((r) => r.employee_id === id);
   const first = emp.name.split(" ")[0].toLowerCase();
@@ -33,6 +34,8 @@ export default async function EmployeePage({ params, searchParams }: { params: P
       marks={marks.filter((m) => m.employee_id === id)}
       errors={linked}
       audit={audit}
+      items={eq.items}
+      issues={eq.issues.filter((i) => i.employee_id === id)}
     />
   );
 }

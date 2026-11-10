@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { saveRow } from "@/lib/actions/crud";
@@ -157,4 +157,19 @@ export function useEditor<T extends { id: string }>() {
     edit: (row: T) => setState({ open: true, row }),
     close: () => setState((s) => ({ ...s, open: false })),
   };
+}
+
+/** Ouvre un formulaire quand l'adresse contient ?new=1 (menu « Nouveau »), puis nettoie l'adresse */
+export function useOpenOnNew(open: () => void) {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const flag = sp.get("new");
+  useEffect(() => {
+    if (flag !== "1") return;
+    open();
+    const q = new URLSearchParams(sp.toString());
+    q.delete("new");
+    router.replace(window.location.pathname + (q.toString() ? "?" + q : ""), { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flag]);
 }

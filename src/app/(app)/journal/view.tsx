@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, Empty } from "@/components/ui/card";
-import { EntityForm, useEditor } from "@/components/ui/entity-form";
+import { EntityForm, useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { PageHeader } from "@/components/ui/page-header";
 import { restoreRow, trashRows } from "@/lib/actions/crud";
 import { JOURNAL_CATS } from "@/lib/domain/constants";
@@ -18,6 +18,7 @@ import { cn, norm } from "@/lib/utils";
 
 export function JournalView({ entries, me }: { entries: JournalEntry[]; me: string }) {
   const ed = useEditor<JournalEntry>();
+  useOpenOnNew(ed.create);
   const canEdit = usePerms().write("journal");
   const router = useRouter();
   const [, start] = useTransition();

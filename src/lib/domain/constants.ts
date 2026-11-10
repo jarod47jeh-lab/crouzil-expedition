@@ -106,6 +106,8 @@ export const TABLE_LABELS: Record<string, string> = {
   announcements: "À la une",
   delivery_notes: "Remontée livraison",
   tasks: "To do list",
+  equipment_items: "Équipement",
+  equipment_issues: "Dotation",
   settings: "Réglages",
 };
 

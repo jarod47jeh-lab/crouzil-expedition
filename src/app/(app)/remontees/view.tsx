@@ -1,4 +1,6 @@
 "use client";
+import { DepotBanner } from "@/components/depot/banner";
+import { minimalSummary } from "@/components/depot/summary-empty";
 import { Megaphone, Plus, Repeat, Siren, CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePerms } from "@/components/app/perms-context";
@@ -6,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, Empty } from "@/components/ui/card";
 import { DataTable } from "@/components/ui/data-table";
-import { useEditor } from "@/components/ui/entity-form";
+import { useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
@@ -25,6 +27,7 @@ export function NotesView({
 }) {
   const perms = usePerms();
   const ed = useEditor<DeliveryNote>();
+  useOpenOnNew(ed.create);
   const [formClient, setFormClient] = useState<ClientLite | null>(null);
   const [onlyAttn, setOnlyAttn] = useState(false);
   const preset = useMemo(() => clients.find((c) => c.id === newForClient) || null, [clients, newForClient]);
@@ -70,6 +73,7 @@ export function NotesView({
           )
         }
       />
+      <DepotBanner focus="quais" caption="Quais de chargement" summary={minimalSummary([], { quais: notes.filter((n) => n.status === "todo" && n.level === "attention").length })} />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="À traiter" value={todo} tone={todo ? "bad" : "ok"} icon={<Siren className="h-5 w-5" />} sub="pas encore prises en compte" />
         <Kpi index={1} label="Aujourd'hui et demain" value={soon} tone={soon ? "warn" : "ok"} icon={<CalendarDays className="h-5 w-5" />} sub="y compris les échues non closes" />

@@ -1,5 +1,6 @@
 import type { FieldDef } from "@/components/ui/entity-form";
 import { TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
+import { SIZE_KINDS } from "@/lib/domain/equipment";
 import type { Employee } from "@/lib/types";
 
 export const EMPLOYEE_FIELDS: FieldDef[] = [
@@ -15,6 +16,7 @@ export const EMPLOYEE_FIELDS: FieldDef[] = [
   { name: "phone", label: "Téléphone", type: "tel" },
   { name: "email", label: "E-mail", type: "email" },
   { name: "hired_on", label: "Date d'entrée", type: "date" },
+  ...SIZE_KINDS.map((k): FieldDef => ({ name: k.col as string, label: `Taille : ${k.label.toLowerCase()}`, type: "select", options: k.options })),
   { name: "active", label: "Toujours dans l'équipe", type: "checkbox" },
   { name: "notes", label: "Notes", type: "textarea" },
 ];

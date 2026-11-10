@@ -1,7 +1,9 @@
 "use client";
+import dynamic from "next/dynamic";
+import { buildVehicles } from "@/components/depot/summary";
 import { CanWrite } from "@/components/app/perms-context";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Camera, Pencil, Plus } from "lucide-react";
 import { HistoryCardClient } from "@/components/app/history-client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,10 +20,13 @@ import { RepairForm } from "../../reparations/shared";
 import { ASSET_FIELDS, assetInitial } from "../fields";
 import { DueBadge } from "../view";
 
+const VehicleModel = dynamic(() => import("@/components/depot/vehicle-model"), { ssr: false });
+
 export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset; repairs: Repair[]; audit: AuditEntry[]; assets: Asset[] }) {
   const ed = useEditor<Asset>();
   const rep = useEditor<Repair>();
   const open = repairs.filter((r) => REPAIR_OPEN.includes(r.status));
+  const vehicle = buildVehicles([{ ...a, active: true }], repairs, new Date().toISOString().slice(0, 10))[0];
   const cost = repairs.reduce((s, r) => s + (Number(r.cost) || 0), 0);
   const immoDays = repairs.filter((r) => r.immobilized).reduce((s, r) => s + Math.max(1, daysBetween(r.observed_on, r.closed_on ? parse(r.closed_on) : undefined)), 0);
   return (
@@ -41,8 +46,11 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
         actions={
           <>
             <CanWrite module="reparations">
-              <Button variant="secondary" onClick={rep.create}>
-                <Plus className="h-4 w-4" /> Signaler un problème
+              <Link href={`/signaler?asset=${a.id}`} className="inline-flex h-10 items-center gap-2 rounded-xl bg-surface-2 px-4 text-sm font-semibold hover:bg-line/70">
+                <Camera className="h-4 w-4" /> Signaler avec une photo
+              </Link>
+              <Button variant="outline" onClick={rep.create}>
+                <Plus className="h-4 w-4" /> Réparation
               </Button>
             </CanWrite>
             <CanWrite module="parc">
@@ -67,6 +75,18 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
           </div>
         </Card>
         <div className="grid min-w-0 content-start gap-6">
+          {a.kind === "VEH" && (
+            <Card className="overflow-hidden">
+              <div className="relative h-[220px] bg-gradient-to-b from-surface-2/60 to-surface">
+                <VehicleModel v={vehicle} />
+                <span className="absolute top-3 left-4 rounded-md border-2 border-ink bg-surface px-2 font-mono text-sm font-bold">{a.ref || a.name}</span>
+                <span className="absolute top-3 right-4">
+                  <Badge tone={vehicle.state === "bad" ? "bad" : vehicle.state === "warn" ? "warn" : "ok"}>{vehicle.state === "bad" ? "Immobilisé" : vehicle.state === "warn" ? "À surveiller" : "Disponible"}</Badge>
+                </span>
+              </div>
+              <p className="border-t border-line px-4 py-2.5 text-sm text-muted">{vehicle.note}</p>
+            </Card>
+          )}
           <Card>
             <CardHeader title="Caractéristiques" />
             <dl className="grid grid-cols-2 gap-3 px-5 pb-5 text-sm">

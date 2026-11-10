@@ -1,4 +1,6 @@
 "use client";
+import { DepotBanner } from "@/components/depot/banner";
+import { minimalSummary } from "@/components/depot/summary-empty";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -71,6 +73,7 @@ export function ErrorsView(p: Props) {
           </>
         }
       />
+      <DepotBanner focus="prepa" caption="Zone préparation" summary={minimalSummary()} />
       <Tabs
         id="err-tabs"
         active={p.tab}

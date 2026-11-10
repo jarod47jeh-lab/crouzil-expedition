@@ -15,15 +15,17 @@ import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAM_TONE, TEAMS }
 import type { balances } from "@/lib/domain/conges";
 import { absencesOn, requestDays } from "@/lib/domain/conges";
 import { MONTHS, addDays, fmtDate, isWorkDay } from "@/lib/domain/dates";
-import type { AuditEntry, DayMark, DeliveryError, Employee, LeaveRequest } from "@/lib/types";
+import type { AuditEntry, DayMark, DeliveryError, Employee, EquipmentIssue, EquipmentItem, LeaveRequest } from "@/lib/types";
+import { applies, ISSUE_STATE, issueStatus, SIZE_KINDS } from "@/lib/domain/equipment";
+import { iso, today } from "@/lib/domain/dates";
 import { nf } from "@/lib/utils";
 import { EMPLOYEE_FIELDS, employeeInitial } from "../fields";
 import { LeaveForm } from "../../conges/leave-form";
 
 export function EmployeeDetail({
-  emp, year, bal, requests, marks, errors, audit,
+  emp, year, bal, requests, marks, errors, audit, items = [], issues = [],
 }: {
-  emp: Employee; year: number; bal: ReturnType<typeof balances>; requests: LeaveRequest[]; marks: DayMark[]; errors: DeliveryError[]; audit: AuditEntry[];
+  emp: Employee; year: number; bal: ReturnType<typeof balances>; requests: LeaveRequest[]; marks: DayMark[]; errors: DeliveryError[]; audit: AuditEntry[]; items?: EquipmentItem[]; issues?: EquipmentIssue[];
 }) {
   const ed = useEditor<Employee>();
   const leave = useEditor<LeaveRequest>();
@@ -142,6 +144,30 @@ export function EmployeeDetail({
           </Card>
         </div>
         <div className="grid min-w-0 content-start gap-6">
+          <Card>
+            <CardHeader title="Tenue et équipements" actions={<Link href={`/equipements?tab=dotations&team=${emp.team}`} className="text-sm font-semibold text-brand">Gérer</Link>} />
+            <div className="grid gap-3 px-5 pb-5">
+              <div className="grid grid-cols-4 gap-1.5 text-center">
+                {SIZE_KINDS.map((k) => (
+                  <div key={k.k} className="rounded-xl bg-surface-2 px-1 py-2">
+                    <p className="font-display text-[15px] leading-tight font-bold">{(emp[k.col] as string | null)?.split(" ")[0] || "—"}</p>
+                    <p className="text-[11px] text-muted">{k.label}</p>
+                  </div>
+                ))}
+              </div>
+              <ul className="grid gap-1.5 text-sm">
+                {items.filter((it) => applies(it, emp.team)).map((it) => {
+                  const st = issueStatus(it, emp.id, issues, iso(today()));
+                  return (
+                    <li key={it.id} className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate">{it.name}</span>
+                      <Badge tone={ISSUE_STATE[st.state].tone}>{ISSUE_STATE[st.state].short}</Badge>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </Card>
           <Card>
             <CardHeader title="Coordonnées" />
             <dl className="grid gap-3 px-5 pb-5 text-sm">

@@ -8,7 +8,10 @@ Accès **sur invitation**, réservé aux responsables et à la direction. Chaque
 
 | Module | Ce qu'on peut faire |
 |---|---|
-| **Tableau de bord** | Indicateurs du jour (absents, congés à valider, réparations, conformité, erreurs d'hier), messages « À la une », absences des 10 prochains jours, erreurs des 8 dernières semaines, points d'attention, activité récente |
+| **Aujourd'hui** (accueil) | Bandeau de chiffres du jour, le dépôt en 3D avec ses alertes (zones, quais, véhicules cliquables), « À traiter » qui réunit tout ce qui attend une décision (véhicule immobilisé, consigne de livraison, congé, tâche en retard, CT proche), qui est là par équipe, to do list, « À la une », livraisons sensibles, absences et erreurs à venir |
+| **Plan du dépôt** | Le dépôt d'Ayguesvives en 3D plein écran : cour à fûts, racks, préparation, réserve, quais, bureau télévente, parking. Chaque zone et chaque véhicule ouvre sa fiche. Les pages Remontées, Véhicules et Erreurs ont un bandeau 3D cadré sur leur zone, chaque fiche véhicule montre le véhicule en 3D avec la couleur de son état |
+| **Signaler avec une photo** | Depuis le téléphone (bouton « + ») : photo, véhicule, problème courant en un toucher (pneu dégonflé, choc, voyant…), urgence ; crée la réparation avec ses photos |
+| **Tenues et équipements** | Tailles de chaque collaborateur (haut, pantalon, pointure, gants), catalogue EPI, tenue, matériel et accès, dotations nominatives avec émargement, restitution et renouvellement, commande groupée par taille exportable |
 | **Remontées livraison** | Particularités des prochaines livraisons et récupérations remontées par les commerciaux, clients, direction, livreurs ou préparateurs : niveau (Attention / Info), client, date ou consigne permanente, tournée, provenance. Regroupées par échéance (en retard, aujourd'hui, demain…), suivi « À traiter → Pris en compte → Clos », reprises sur le tableau de bord et dans la fiche client |
 | **Présences et congés** | Équipes Chauffeurs, Préparateurs, Service Commande et Bureau Direction. Vue du jour (statut de chacun, freelances déclenchés), planning mensuel avec saisie rapide au pinceau, demandes (création, validation et refus en un clic, annulation possible), soldes CP / RTT / récupération, statistiques et taux d'absentéisme. Jours fériés calculés automatiquement, alerte au-delà du seuil d'absents |
 | **Réparations** | Tableau de bord (ouvertes, bloquantes, délai moyen, coût), liste filtrable, fiche avec suivi du statut en un clic et photos (prises directement au téléphone), message prêt à envoyer au responsable atelier |
@@ -19,6 +22,10 @@ Accès **sur invitation**, réservé aux responsables et à la direction. Chaque
 | **Administration** | Historique de toutes les modifications (qui, quoi, quand), corbeille restaurable 30 jours, invitation des comptes avec rôle et menus, désactivation, réglages |
 
 Partout : recherche globale (`Ctrl + K` / `⌘K`), exports Excel et CSV, mode sombre, affichage adapté au téléphone.
+
+## Menus
+
+L'appli est organisée par espace métier : **Aujourd'hui**, **Livraisons** (remontées clients, erreurs et conformité, clients), **Dépôt** (plan 3D, véhicules et matériel, réparations), **Équipes** (planning et congés, collaborateurs, tenues et équipements), **Actions** (to do list, journal). L'administration est rangée en bas du menu. Sur téléphone, les cinq espaces sont en bas de l'écran, avec un bouton « + » pour créer vite.
 
 ## Rôles et menus
 
@@ -36,6 +43,7 @@ Pour chaque compte (hors administrateur), l'administrateur coche les menus visib
 - **Next.js 15** (App Router, Server Actions) et **TypeScript**
 - **Supabase** : base Postgres, connexion par e-mail et mot de passe, stockage des photos
 - **Tailwind CSS 4**, **Motion** pour les animations, **Recharts** pour les graphiques
+- **Three.js** avec React Three Fiber pour le dépôt en 3D, chargé seulement sur les pages qui l'affichent
 - Sécurité dans la base (Row Level Security) : sans compte membre actif, on ne lit ni n'écrit rien
 - Historique et corbeille gérés par des déclencheurs SQL, donc impossibles à contourner depuis l'interface
 
@@ -64,6 +72,7 @@ scripts/              reprise des données de l'ancien artefact
    - `supabase/migrations/20261103000000_roles_and_delivery_notes.sql`
    - `supabase/migrations/20261103000001_teams_office.sql`
    - `supabase/migrations/20261106000000_tasks.sql`
+   - `supabase/migrations/20261110000000_equipment.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.

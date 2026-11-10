@@ -3,6 +3,7 @@ import {
   getAnnouncements,
   getAssets,
   getNotes,
+  getTasks,
   getAudit,
   getCalls,
   getEmployees,
@@ -58,7 +59,7 @@ export default async function Home() {
     getAssets(sb),
     getAudit(sb, { limit: 12 }),
   ]);
-  const notes = await getNotes(sb);
+  const [notes, tasks] = await Promise.all([getNotes(sb), getTasks(sb)]);
   const pending = leaves.filter((l) => l.status === "pending");
   return (
     <>
@@ -80,6 +81,7 @@ export default async function Home() {
         assets={assets}
         audit={audit}
         notes={notes}
+        tasks={tasks}
       />
     </>
   );

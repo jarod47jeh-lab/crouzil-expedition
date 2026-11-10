@@ -8,7 +8,7 @@ import { usePerms } from "@/components/app/perms-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, Empty } from "@/components/ui/card";
-import { EntityForm, useEditor } from "@/components/ui/entity-form";
+import { EntityForm, useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { renameSection, saveRow, setTaskDone, trashRows } from "@/lib/actions/crud";
@@ -199,6 +199,7 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
   const perms = usePerms();
   const canEdit = perms.write("taches");
   const ed = useEditor<Task>();
+  useOpenOnNew(ed.create);
   const [, start] = useTransition();
   // état local pour cocher sans attendre le serveur
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
