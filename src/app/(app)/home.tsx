@@ -15,6 +15,7 @@ import { CountUp } from "@/components/ui/kpi";
 import { DepotTiles } from "@/components/depot/overview";
 import { DepotHero } from "@/components/depot/hero";
 import { buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
+import { minimalSummary } from "@/components/depot/summary-empty";
 import { restoreRow, trashRows } from "@/lib/actions/crud";
 import { ANNOUNCEMENT_KINDS, LEAVE_LABEL, REPAIR_OPEN, TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
 import { absencesOn } from "@/lib/domain/conges";
@@ -100,19 +101,26 @@ export function HomeView(p: Props) {
     const deliv = dash.filter((n) => n.kind !== "recuperation");
     const recup = p.notes.filter((n) => (n.kind === "recuperation" || n.kind === "les_deux") && n.status !== "done");
     const prep = teams.find((x) => x.key === "prep"), cmd = teams.find((x) => x.key === "commande");
-    return {
+    const out = (x?: (typeof teams)[number]) => (x?.out || []).map((e) => ({ text: `${e.name} absent`, tone: "warn" as const }));
+    return minimalSummary(
       vehicles,
-      teams: teams.map(({ key, label, present, total }) => ({ key, label, present, total })),
-      zones: {
-        quais: { id: "quais", alerts: deliv.filter((n) => n.level === "attention" && n.status === "todo").length, lines: deliv.slice(0, 4).map(noteLine), stat: `${deliv.length} consigne(s) pour les départs` },
-        cour: { id: "cour", alerts: recup.filter((n) => n.status === "todo").length, lines: recup.slice(0, 4).map(noteLine), stat: "Fûts pleins, vides et reprises" },
-        prepa: { id: "prepa", alerts: errYd.length ? 1 : 0, lines: [...(errYd.length ? [{ text: `${errYd.length} erreur(s) de livraison hier`, tone: "warn" as const }] : []), ...(prep?.out || []).map((e) => ({ text: `${e.name} absent`, tone: "warn" as const }))], stat: prep ? `${prep.present}/${prep.total} préparateurs présents` : "Préparation des commandes" },
-        racks: { id: "racks", alerts: 0, lines: [], stat: "Allées de racks palettes" },
-        reserve: { id: "reserve", alerts: 0, lines: [], stat: "Cage alcools forts, accès badgé" },
-        bureau: { id: "bureau", alerts: 0, lines: (cmd?.out || []).map((e) => ({ text: `${e.name} absent`, tone: "warn" as const })), stat: cmd ? `${cmd.present}/${cmd.total} au Service Commande` : "Prise de commandes" },
-        parking: { id: "parking", alerts: vDown, lines: vehicles.filter((v) => v.state !== "ok").map((v) => ({ text: `${v.name} : ${v.note}`, tone: v.state === "bad" ? ("bad" as const) : ("warn" as const) })), stat: `${vehicles.length - vDown}/${vehicles.length} véhicules disponibles` },
+      {
+        quais: deliv.filter((n) => n.level === "attention" && n.status === "todo").length,
+        vide: recup.filter((n) => n.status === "todo").length,
+        depose: errYd.length ? 1 : 0,
+        parking: vDown,
       },
-    };
+      {
+        quais: { lines: deliv.slice(0, 5).map(noteLine), stat: `${deliv.length} consigne(s) pour les départs · 3 rideaux` },
+        vide: { lines: recup.slice(0, 5).map(noteLine), stat: "Retours de fûts et casiers vides" },
+        depose: { lines: [...(errYd.length ? [{ text: `${errYd.length} erreur(s) de livraison hier`, tone: "warn" as const }] : []), ...out(prep)], stat: prep ? `${prep.present}/${prep.total} préparateurs présents` : "Commandes préparées" },
+        bureau: { lines: out(cmd), stat: cmd ? `${cmd.present}/${cmd.total} au Service Commande` : "Prise de commandes" },
+        parking: { lines: vehicles.filter((v) => v.state !== "ok").map((v) => ({ text: `${v.name} : ${v.note}`, tone: v.state === "bad" ? ("bad" as const) : ("warn" as const) })), stat: `${vehicles.length - vDown}/${vehicles.length} véhicules disponibles` },
+        soft: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },
+        vins: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },
+        alcool: { stat: "2 niveaux, 2 m maxi, en cage" },
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.notes, vehicles, errYd.length, absToday.length]);
 

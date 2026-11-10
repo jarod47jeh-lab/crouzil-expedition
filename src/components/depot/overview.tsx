@@ -1,24 +1,29 @@
 "use client";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowRight, Box, Building, Container, PackageOpen, ParkingSquare, ShieldCheck, Warehouse } from "lucide-react";
+import { ArrowRight, Box, Building, Container, Droplet, GlassWater, PackageOpen, ParkingSquare, Recycle, ShieldCheck, Trees, Warehouse, Wine } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { DepotSummary, DepotZoneInfo } from "./summary";
+import type { DepotSummary, ZoneId } from "./summary";
 
-export const ZONE_META: Record<DepotZoneInfo["id"], { name: string; kick: string; icon: typeof Box; href: string }> = {
-  quais: { name: "Quais de chargement", kick: "Départs et consignes", icon: Container, href: "/remontees" },
-  cour: { name: "Cour à fûts", kick: "Pleins, vides, reprises", icon: PackageOpen, href: "/remontees" },
-  racks: { name: "Entrepôt racks", kick: "Stockage palettes", icon: Warehouse, href: "/journal" },
-  prepa: { name: "Zone préparation", kick: "Préparateurs et erreurs", icon: Box, href: "/erreurs" },
-  reserve: { name: "Réserve spiritueux", kick: "Zone sécurisée", icon: ShieldCheck, href: "/taches" },
-  bureau: { name: "Bureau télévente", kick: "Service Commande", icon: Building, href: "/conges" },
-  parking: { name: "Parking camions", kick: "Flotte", icon: ParkingSquare, href: "/parc" },
+export const ZONE_META: Record<ZoneId, { name: string; kick: string; icon: typeof Box; href: string }> = {
+  quais: { name: "Quais", kick: "3 rideaux de chargement", icon: Container, href: "/remontees" },
+  parking: { name: "Véhicules", kick: "Stationnement de la flotte", icon: ParkingSquare, href: "/parc" },
+  depose: { name: "Dépose commandes", kick: "Commandes préparées", icon: Box, href: "/erreurs" },
+  soft: { name: "Soft", kick: "Racks 3 niveaux, 6 m", icon: Warehouse, href: "/journal" },
+  vins: { name: "Vins", kick: "Racks 3 niveaux, 6 m", icon: Wine, href: "/journal" },
+  sirop: { name: "Sirop", kick: "Étagères de picking", icon: Droplet, href: "/journal" },
+  alcool: { name: "Alcool", kick: "2 niveaux, 2 m max", icon: ShieldCheck, href: "/taches" },
+  futs: { name: "Fûts", kick: "Fûts pleins", icon: PackageOpen, href: "/remontees" },
+  patio: { name: "Patio", kick: "Entre fûts et soft", icon: Trees, href: "/remontees" },
+  verres: { name: "Verres et fûts", kick: "Verres et fûts", icon: GlassWater, href: "/journal" },
+  bureau: { name: "Bureau téléachat", kick: "Service Commande", icon: Building, href: "/conges" },
+  vide: { name: "Vides", kick: "Retours et vides", icon: Recycle, href: "/remontees" },
 };
 const TONE = { ok: "bg-ok", warn: "bg-warn", bad: "bg-bad" };
 
 /** Résumé du dépôt en tuiles : version légère, et liste accessible sous la vue 3D */
 export function DepotTiles({ s, compact }: { s: DepotSummary; compact?: boolean }) {
-  const order: DepotZoneInfo["id"][] = ["quais", "parking", "cour", "prepa", "racks", "bureau", "reserve"];
+  const order: ZoneId[] = ["quais", "parking", "depose", "futs", "soft", "vins", "sirop", "alcool", "verres", "patio", "bureau", "vide"];
   return (
     <div className={cn("grid gap-2", compact ? "grid-cols-2 md:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-3")}>
       {order.map((id, i) => {

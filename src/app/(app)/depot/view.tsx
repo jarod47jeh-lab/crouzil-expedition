@@ -8,6 +8,7 @@ import { DepotTiles } from "@/components/depot/overview";
 import { SelectionPanel } from "@/components/depot/hero";
 import type { Selection } from "@/components/depot/scene";
 import { buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
+import { minimalSummary } from "@/components/depot/summary-empty";
 import { forDashboard } from "@/lib/domain/notes";
 import { iso, today } from "@/lib/domain/dates";
 import type { Asset, DeliveryNote, Repair } from "@/lib/types";
@@ -23,24 +24,22 @@ export function DepotView({ assets, repairs, notes }: { assets: Asset[]; repairs
     const deliv = dash.filter((n) => n.kind !== "recuperation");
     const recup = notes.filter((n) => (n.kind === "recuperation" || n.kind === "les_deux") && n.status !== "done");
     const down = vehicles.filter((v) => v.state === "bad").length;
-    const empty = (id: "racks" | "prepa" | "reserve" | "bureau", stat: string) => ({ id, alerts: 0, lines: [], stat });
-    return {
+    return minimalSummary(
       vehicles,
-      teams: [],
-      zones: {
-        quais: { id: "quais", alerts: deliv.filter((n) => n.level === "attention" && n.status === "todo").length, lines: deliv.map(noteLine), stat: `${deliv.length} consigne(s) pour les départs` },
-        cour: { id: "cour", alerts: recup.filter((n) => n.status === "todo").length, lines: recup.map(noteLine), stat: "Fûts pleins, vides et reprises" },
-        prepa: empty("prepa", "Préparation des commandes"),
-        racks: empty("racks", "Allées de racks palettes"),
-        reserve: empty("reserve", "Cage alcools forts, accès badgé"),
-        bureau: empty("bureau", "Prise de commandes"),
-        parking: { id: "parking", alerts: down, lines: [], stat: `${vehicles.length - down}/${vehicles.length} véhicules disponibles` },
+      { quais: deliv.filter((n) => n.level === "attention" && n.status === "todo").length, vide: recup.filter((n) => n.status === "todo").length, parking: down },
+      {
+        quais: { lines: deliv.map(noteLine), stat: `${deliv.length} consigne(s) pour les départs · 3 rideaux` },
+        vide: { lines: recup.map(noteLine), stat: "Retours de fûts et casiers vides" },
+        parking: { stat: `${vehicles.length - down}/${vehicles.length} véhicules disponibles` },
+        soft: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },
+        vins: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },
+        alcool: { stat: "2 niveaux, 2 m maxi, en cage" },
       },
-    };
+    );
   }, [assets, repairs, notes]);
   return (
     <>
-      <PageHeader title="Plan du dépôt" icon={<Warehouse className="h-6 w-6" />} subtitle="Ayguesvives · zones, quais et véhicules en direct. Les mesures exactes des racks viendront à l'étape suivante." />
+      <PageHeader title="Plan du dépôt" icon={<Warehouse className="h-6 w-6" />} subtitle="Ayguesvives · zones, quais et véhicules en direct. Racks de 30 m sur 3 niveaux, plafond à 8 m." />
       <div className="relative -mx-4 h-[62dvh] min-h-[380px] overflow-hidden border-y border-line bg-surface-2/40 sm:mx-0 sm:rounded-2xl sm:border">
         <Scene summary={s} selection={sel} onSelect={setSel} />
         <AnimatePresence>{sel && <SelectionPanel s={s} sel={sel} onClose={() => setSel(null)} className="absolute right-3 bottom-3 left-3 z-30 sm:left-auto sm:w-[340px]" />}</AnimatePresence>

@@ -1,5 +1,9 @@
 import type { Asset, DeliveryNote, Repair } from "@/lib/types";
 
+/** Zones du dépôt d'Ayguesvives, d'après le plan annoté */
+export const ZONE_IDS = ["vide", "verres", "futs", "patio", "depose", "bureau", "soft", "vins", "sirop", "alcool", "quais", "parking"] as const;
+export type ZoneId = (typeof ZONE_IDS)[number];
+
 /** Ce que la vue du dépôt affiche, calculé à partir des données de l'appli */
 export interface DepotVehicle {
   id: string;
@@ -11,7 +15,7 @@ export interface DepotVehicle {
   note: string;
 }
 export interface DepotZoneInfo {
-  id: "cour" | "racks" | "prepa" | "reserve" | "quais" | "bureau" | "parking";
+  id: ZoneId;
   alerts: number;
   lines: { text: string; sub?: string; tone: "ok" | "warn" | "bad" }[];
   stat?: string;

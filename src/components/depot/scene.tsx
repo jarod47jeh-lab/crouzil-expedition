@@ -1,44 +1,55 @@
 "use client";
-/* Dépôt Crouzil en 3D : disposition d'après la vue satellite d'Ayguesvives.
-   Unités : 1 = environ 1,5 m. Les zones sont cliquables, les véhicules viennent du parc. */
+/* Dépôt Crouzil d'Ayguesvives en 3D, d'après le plan annoté (vue aérienne).
+   Unité : 1 = 1 mètre. x vers l'est, z vers le sud (la route est au sud).
+   Bâtiment clair : soft, vins, sirop, alcool, 3 rideaux de quai en façade.
+   Bâtiments sombres : verres et fûts, fûts, dépose commandes, bureau téléachat. */
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { DepotSummary, DepotVehicle, DepotZoneInfo } from "./summary";
+import type { DepotSummary, DepotVehicle, ZoneId } from "./summary";
 import { ZONE_META } from "./overview";
 
-type ZoneId = DepotZoneInfo["id"];
 export type Selection = { type: "zone"; id: ZoneId } | { type: "vehicle"; id: string } | null;
 
-export { Mat, Box };
-export const ZONES: { id: ZoneId; x: number; z: number; w: number; d: number; color: string; walls?: boolean; low?: boolean; flat?: boolean }[] = [
-  { id: "cour", x: -33, z: -7, w: 19.5, d: 14.5, color: "#c7bcb0" },
-  { id: "racks", x: -13, z: -9.8, w: 19.8, d: 8.8, color: "#ddd4ca", walls: true },
-  { id: "prepa", x: 6.8, z: -9.8, w: 10.7, d: 8.8, color: "#e6dcd1", walls: true },
-  { id: "reserve", x: 6.5, z: -1, w: 11.5, d: 6, color: "#ded5cb", walls: true },
-  { id: "quais", x: -13, z: -1, w: 19.5, d: 2.6, color: "#d3cabf", flat: true },
-  { id: "bureau", x: 6.5, z: 5, w: 5.5, d: 3, color: "#f1e8de", walls: true, low: true },
-  { id: "parking", x: 12.5, z: 6.4, w: 14.5, d: 4.4, color: "#bfb4a8", flat: true },
+type Zone = { id: ZoneId; x: number; z: number; w: number; d: number; color: string; pinY: number };
+/* Emprise au sol de chaque zone (m) */
+export const ZONES: Zone[] = [
+  { id: "vide", x: -178, z: -16, w: 80, d: 46, color: "#cfc4b6", pinY: 4 },
+  { id: "verres", x: -95, z: -22, w: 80, d: 36, color: "#ddd5cb", pinY: 11 },
+  { id: "futs", x: -15, z: -26, w: 22, d: 30, color: "#ddd5cb", pinY: 11 },
+  { id: "patio", x: 7, z: -26, w: 21, d: 18, color: "#cbbfb1", pinY: 5 },
+  { id: "depose", x: 7, z: -8, w: 21, d: 14, color: "#e3dacf", pinY: 9 },
+  { id: "bureau", x: -12, z: 6, w: 26, d: 11, color: "#f1e8de", pinY: 6 },
+  { id: "soft", x: 28, z: -35, w: 30, d: 47, color: "#e6ded4", pinY: 12 },
+  { id: "vins", x: 58, z: -35, w: 42, d: 36, color: "#e6ded4", pinY: 12 },
+  { id: "sirop", x: 58, z: 1, w: 26, d: 11, color: "#ece4da", pinY: 6 },
+  { id: "alcool", x: 84, z: 1, w: 16, d: 11, color: "#ece4da", pinY: 6 },
+  { id: "quais", x: 28, z: 12, w: 34, d: 9, color: "#c9bfb3", pinY: 6 },
+  { id: "parking", x: 62, z: 14, w: 40, d: 16, color: "#bdb2a5", pinY: 4 },
 ];
+const zoneOf = (id: ZoneId) => ZONES.find((z) => z.id === id)!;
 const center = (id: ZoneId) => {
-  const z = ZONES.find((x) => x.id === id)!;
+  const z = zoneOf(id);
   return new THREE.Vector3(z.x + z.w / 2, 0, z.z + z.d / 2);
 };
 const STATE_COLOR = { ok: "#2f9e5b", warn: "#e08a1e", bad: "#d6333a" };
+const ROAD_Z = 42;
 
-/* Emplacements des véhicules : 2 à quai, puis le parking */
+/* Emplacements des véhicules : devant les 3 rideaux, puis le stationnement */
 const SPOTS: [number, number, number][] = [
-  [-10.5, 2.7, -Math.PI / 2],
-  [-1.2, 2.7, -Math.PI / 2],
-  [14.0, 8.6, Math.PI / 2],
-  [16.6, 8.6, Math.PI / 2],
-  [19.2, 8.6, Math.PI / 2],
-  [21.8, 8.6, Math.PI / 2],
-  [24.4, 8.6, Math.PI / 2],
-  [-20, 9.5, 0],
-  [-26, 9.5, 0],
+  [34, 18.5, Math.PI / 2],
+  [45, 18.5, Math.PI / 2],
+  [56, 18.5, Math.PI / 2],
+  [68, 22, Math.PI / 2],
+  [74, 22, Math.PI / 2],
+  [80, 22, Math.PI / 2],
+  [86, 22, Math.PI / 2],
+  [92, 22, Math.PI / 2],
+  [98, 22, Math.PI / 2],
+  [20, 26, 0],
+  [8, 26, 0],
 ];
 
 function useDark() {
@@ -54,11 +65,11 @@ function useDark() {
   return dark;
 }
 
-function Mat({ c, ...rest }: { c: string } & Partial<THREE.MeshStandardMaterialParameters>) {
+export function Mat({ c, ...rest }: { c: string } & Partial<THREE.MeshStandardMaterialParameters>) {
   return <meshStandardMaterial color={c} roughness={0.85} {...rest} />;
 }
 
-function Box({ s, p, c, cast = true, ...rest }: { s: [number, number, number]; p: [number, number, number]; c: string; cast?: boolean } & Partial<THREE.MeshStandardMaterialParameters>) {
+export function Box({ s, p, c, cast = true, ...rest }: { s: [number, number, number]; p: [number, number, number]; c: string; cast?: boolean } & Partial<THREE.MeshStandardMaterialParameters>) {
   return (
     <mesh position={p} castShadow={cast} receiveShadow>
       <boxGeometry args={s} />
@@ -67,175 +78,204 @@ function Box({ s, p, c, cast = true, ...rest }: { s: [number, number, number]; p
   );
 }
 
-function Walls({ z }: { z: (typeof ZONES)[number] }) {
-  const H = z.low ? 3.2 : 4.6, t = 0.35;
+/* Boîtes instanciées : une seule géométrie pour des centaines d'objets */
+function useBoxes(list: { p: [number, number, number]; s: [number, number, number]; c?: string }[]) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = ref.current;
+    if (!m) return;
+    const o = new THREE.Object3D(), col = new THREE.Color();
+    list.forEach((b, i) => {
+      o.position.set(...b.p);
+      o.scale.set(...b.s);
+      o.updateMatrix();
+      m.setMatrixAt(i, o.matrix);
+      if (b.c) m.setColorAt(i, col.set(b.c));
+    });
+    m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }, [list]);
+  return ref;
+}
+function Boxes({ list, c = "#ffffff", cast = true, ...rest }: { list: { p: [number, number, number]; s: [number, number, number]; c?: string }[]; c?: string; cast?: boolean } & Partial<THREE.MeshStandardMaterialParameters>) {
+  const ref = useBoxes(list);
+  if (!list.length) return null;
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow={cast} receiveShadow>
+      <boxGeometry args={[1, 1, 1]} />
+      <Mat c={c} {...rest} />
+    </instancedMesh>
+  );
+}
+function Kegs({ list }: { list: [number, number, number][] }) {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const o = new THREE.Object3D();
+    list.forEach((p, i) => {
+      o.position.set(...p);
+      o.updateMatrix();
+      ref.current!.setMatrixAt(i, o.matrix);
+    });
+    ref.current!.instanceMatrix.needsUpdate = true;
+  }, [list]);
+  return (
+    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow>
+      <cylinderGeometry args={[0.27, 0.27, 0.6, 10]} />
+      <Mat c="#c4cad2" metalness={0.55} roughness={0.35} />
+    </instancedMesh>
+  );
+}
+
+/* Pile de fûts sur palettes : 4 fûts par palette, h palettes */
+function kegStack(x: number, z: number, h: number, kegs: [number, number, number][], pals: { p: [number, number, number]; s: [number, number, number] }[]) {
+  for (let l = 0; l < h; l++) {
+    const y = l * 0.78;
+    pals.push({ p: [x, y + 0.07, z], s: [1.2, 0.14, 1.2] });
+    for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) kegs.push([x - 0.28 + a * 0.56, y + 0.45, z - 0.28 + b * 0.56]);
+  }
+}
+
+/* Bâtiment en coupe : murs du fond et des côtés pleine hauteur, façade basse pour voir dedans */
+function Shell({ x, z, w, d, h, roof, wall = "#ece5dc", front = 2.2 }: { x: number; z: number; w: number; d: number; h: number; roof: string; wall?: string; front?: number }) {
+  const t = 0.4;
   return (
     <group>
-      <Box s={[z.w, H, t]} p={[z.x + z.w / 2, H / 2, z.z]} c="#eee7de" />
-      <Box s={[z.w, H * 0.3, t]} p={[z.x + z.w / 2, H * 0.15, z.z + z.d]} c="#eee7de" />
-      <Box s={[t, H, z.d]} p={[z.x, H / 2, z.z + z.d / 2]} c="#eee7de" />
-      <Box s={[t, H, z.d]} p={[z.x + z.w, H / 2, z.z + z.d / 2]} c="#eee7de" />
-      <Box s={[z.w + 0.2, 0.22, 0.6]} p={[z.x + z.w / 2, H + 0.1, z.z]} c="#3a3f4b" />
+      <Box s={[w, h, t]} p={[x + w / 2, h / 2, z]} c={wall} />
+      <Box s={[t, h, d]} p={[x, h / 2, z + d / 2]} c={wall} />
+      <Box s={[t, h, d]} p={[x + w, h / 2, z + d / 2]} c={wall} />
+      <Box s={[w, front, t]} p={[x + w / 2, front / 2, z + d]} c={wall} />
+      {/* rive de toit, rappel de la couleur vue du ciel */}
+      <Box s={[w + 0.6, 0.5, 1.2]} p={[x + w / 2, h + 0.25, z]} c={roof} />
+      <Box s={[1.2, 0.5, d]} p={[x, h + 0.25, z + d / 2]} c={roof} />
+      <Box s={[1.2, 0.5, d]} p={[x + w, h + 0.25, z + d / 2]} c={roof} />
     </group>
   );
 }
 
-/* Racks : montants bleus, lisses orange, palettes chargées */
-function Racks() {
-  const z = ZONES[1];
-  const up = useRef<THREE.InstancedMesh>(null), beam = useRef<THREE.InstancedMesh>(null), pal = useRef<THREE.InstancedMesh>(null);
-  const rows = 4, bays = 9, levels = 3;
-  useLayoutEffect(() => {
-    const o = new THREE.Object3D(), col = new THREE.Color();
-    const cols = ["#d8b48a", "#eeeae4", "#c9a37a", "#9eb7c9", "#e9e3dc", "#b54d3a", "#d9cfbf", "#6f8f6a"];
-    let iu = 0, ib = 0, ip = 0;
-    for (let r = 0; r < rows; r++) {
-      const zc = z.z + 1.3 + r * 2.0;
+/* Racks : 30 m de long, 6 m de haut, 3 niveaux, en double rangée dos à dos */
+function useRacks() {
+  return useMemo(() => {
+    const up: { p: [number, number, number]; s: [number, number, number] }[] = [];
+    const beam: typeof up = [];
+    const pal: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
+    const cols = ["#d8b48a", "#efebe5", "#c9a37a", "#9eb7c9", "#e9e3dc", "#b54d3a", "#d9cfbf", "#7f9a6f", "#e8c3c8"];
+    const run = (x: number, z0: number) => {
+      const bays = 11, bay = 2.7;
       for (let s = 0; s < 2; s++) {
-        const zz = zc + s * 0.95;
-        for (let b = 0; b <= bays; b++) {
-          o.position.set(z.x + 0.9 + b * 2, 1.95, zz);
-          o.updateMatrix();
-          up.current!.setMatrixAt(iu++, o.matrix);
-        }
+        const xx = x + s * 1.2;
+        for (let b = 0; b <= bays; b++) up.push({ p: [xx, 3, z0 + b * bay], s: [0.12, 6, 0.12] });
         for (let b = 0; b < bays; b++)
-          for (let l = 0; l < levels; l++) {
-            o.position.set(z.x + 1.9 + b * 2, 0.35 + l * 1.25, zz);
-            o.updateMatrix();
-            beam.current!.setMatrixAt(ib++, o.matrix);
-            if ((b * 7 + l * 3 + r * 5 + s) % 9 !== 0) {
-              o.position.set(z.x + 1.9 + b * 2, 0.8 + l * 1.25, zz);
-              o.updateMatrix();
-              pal.current!.setMatrixAt(ip, o.matrix);
-              pal.current!.setColorAt(ip, col.set(cols[(b * 7 + l * 3 + r) % cols.length]));
-              ip++;
+          for (let l = 0; l < 3; l++) {
+            const y = 0.15 + l * 2;
+            beam.push({ p: [xx, y + (l ? 0 : 0), z0 + b * bay + bay / 2], s: [0.1, 0.14, bay] });
+            for (let k = 0; k < 2; k++) {
+              const seed = (Math.round(x) * 7 + b * 13 + l * 5 + k * 3 + s) % 17;
+              if (seed === 0 || seed === 9) continue;
+              pal.push({ p: [xx, y + 0.85, z0 + b * bay + 0.68 + k * 1.34], s: [1.0, 1.4 - (seed % 3) * 0.15, 1.15], c: cols[seed % cols.length] });
             }
           }
       }
-    }
-    pal.current!.count = ip;
-    [up, beam, pal].forEach((m) => {
-      m.current!.instanceMatrix.needsUpdate = true;
-      if (m.current!.instanceColor) m.current!.instanceColor.needsUpdate = true;
-    });
-  }, [z.x, z.z]);
-  const n = rows * 2;
-  return (
-    <group>
-      <instancedMesh ref={up} args={[undefined, undefined, n * (bays + 1)]} castShadow>
-        <boxGeometry args={[0.14, 3.8, 0.14]} />
-        <Mat c="#23407a" />
-      </instancedMesh>
-      <instancedMesh ref={beam} args={[undefined, undefined, n * bays * levels]} castShadow>
-        <boxGeometry args={[1.95, 0.14, 0.12]} />
-        <Mat c="#e2721c" />
-      </instancedMesh>
-      <instancedMesh ref={pal} args={[undefined, undefined, n * bays * levels]} castShadow receiveShadow>
-        <boxGeometry args={[1.6, 0.75, 0.9]} />
-        <Mat c="#ffffff" />
-      </instancedMesh>
-    </group>
-  );
+    };
+    // Soft : 4 doubles rangées ; vins : 6 doubles rangées (30 m le long de z)
+    [31.5, 37.5, 43.5, 49.5].forEach((x) => run(x, -33));
+    [61, 67, 73, 79, 85, 91].forEach((x) => run(x, -33));
+    return { up, beam, pal };
+  }, []);
 }
 
-/* Cour : piles de fûts sur palettes */
-function Kegs() {
-  const z = ZONES[0];
-  const keg = useRef<THREE.InstancedMesh>(null), pal = useRef<THREE.InstancedMesh>(null);
-  const stacks = useMemo(() => {
-    const s: [number, number, number][] = [];
-    for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) s.push([z.x + 2.2 + i * 1.5, z.z + 1.6 + j * 1.5, 3 + ((i * 7 + j * 3) % 4)]);
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) s.push([z.x + 11.5 + i * 1.5, z.z + 6.5 + j * 1.5, 1 + ((i + j) % 3)]);
-    for (let i = 0; i < 3; i++) s.push([z.x + 4 + i * 1.5, z.z + 11.5, 2]);
-    return s;
-  }, [z.x, z.z]);
-  const nK = stacks.reduce((n, s) => n + s[2] * 4, 0), nP = stacks.reduce((n, s) => n + s[2], 0);
-  useLayoutEffect(() => {
-    const o = new THREE.Object3D();
-    let ik = 0, ip = 0;
-    stacks.forEach(([x, zz, h]) => {
-      for (let l = 0; l < h; l++) {
-        const y = l * 0.78;
-        o.position.set(x, y + 0.07, zz);
-        o.updateMatrix();
-        pal.current!.setMatrixAt(ip++, o.matrix);
-        for (let a = 0; a < 2; a++)
-          for (let b = 0; b < 2; b++) {
-            o.position.set(x - 0.28 + a * 0.56, y + 0.45, zz - 0.28 + b * 0.56);
-            o.updateMatrix();
-            keg.current!.setMatrixAt(ik++, o.matrix);
-          }
+function Interior() {
+  const racks = useRacks();
+  const { kegs, pals, loads, glass } = useMemo(() => {
+    const kegs: [number, number, number][] = [];
+    const pals: { p: [number, number, number]; s: [number, number, number] }[] = [];
+    const loads: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
+    const glass: typeof loads = [];
+    // Fûts (bâtiment) : blocs de fûts sur palettes
+    for (let i = 0; i < 7; i++) for (let j = 0; j < 9; j++) if ((i + j) % 5) kegStack(-12 + i * 2.6, -23 + j * 2.8, 2 + ((i * 3 + j) % 3), kegs, pals);
+    // Patio : fûts au pied du bardage, comme sur la photo
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) kegStack(9.5 + i * 2.9, -23.5 + j * 3.3, 3 + ((i + j * 2) % 4), kegs, pals);
+    // Verres et fûts : palettes de verres filmées et fûts
+    for (let i = 0; i < 16; i++)
+      for (let j = 0; j < 5; j++) {
+        const x = -91 + i * 4.6, z = -18 + j * 5.5;
+        if (i < 9) glass.push({ p: [x, 0.85, z], s: [1.2, 1.6, 1.0], c: ["#f3f1ec", "#e7ecef", "#ecdfc8"][(i + j) % 3] }, { p: [x + 1.5, 0.85, z], s: [1.2, 1.6, 1.0], c: "#f3f1ec" });
+        else kegStack(x, z, 2 + ((i + j) % 3), kegs, pals);
       }
-    });
-    keg.current!.instanceMatrix.needsUpdate = true;
-    pal.current!.instanceMatrix.needsUpdate = true;
-  }, [stacks]);
+    // Vides : retours éparpillés dans la cour
+    for (let i = 0; i < 14; i++)
+      for (let j = 0; j < 6; j++) {
+        const r = (i * 31 + j * 17) % 11;
+        if (r > 6) continue;
+        const x = -172 + i * 5.4 + (r % 3), z = -10 + j * 6.5 + (r % 2) * 1.5;
+        if (r % 2) kegStack(x, z, 1 + (r % 3), kegs, pals);
+        else loads.push({ p: [x, 0.5 + r * 0.1, z], s: [1.2, 1 + r * 0.2, 1.0], c: ["#5f7fa0", "#b7a07a", "#7a8f5a", "#a35a4a"][r % 4] });
+      }
+    // Dépose commandes : palettes préparées, filmées, alignées
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) loads.push({ p: [10 + i * 3, 0.8, -5.5 + j * 3.6], s: [1.2, 1.5, 1.0], c: ["#e9e3dc", "#d2a36d", "#c4a882", "#b9cfe0"][(i + j) % 4] });
+    // Devant les quais, dans le soft : palettes en attente de chargement
+    for (let i = 0; i < 8; i++) loads.push({ p: [31 + i * 3.4, 0.8, 7], s: [1.2, 1.5, 1.0], c: ["#e9e3dc", "#d2a36d", "#9eb7c9"][i % 3] });
+    return { kegs, pals, loads, glass };
+  }, []);
+  // Sirop : étagères basses ; alcool : 2 niveaux, 2 m maxi, en cage
+  const shelves = useMemo(() => {
+    const frame: { p: [number, number, number]; s: [number, number, number] }[] = [];
+    const goods: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
+    const runs = (x0: number, z0: number, n: number, len: number, h: number, levels: number, palette: string[]) => {
+      for (let r = 0; r < n; r++) {
+        const z = z0 + r * 3;
+        frame.push({ p: [x0 + len / 2, h / 2, z - 0.45], s: [len, h, 0.06] });
+        for (let l = 0; l < levels; l++) {
+          frame.push({ p: [x0 + len / 2, 0.2 + (l * h) / levels, z], s: [len, 0.06, 0.9] });
+          for (let k = 0; k < len / 0.7 - 1; k++) goods.push({ p: [x0 + 0.5 + k * 0.7, 0.45 + (l * h) / levels, z], s: [0.5, 0.45, 0.6], c: palette[(k + l + r) % palette.length] });
+        }
+      }
+    };
+    runs(60, 3.5, 3, 22, 2.2, 3, ["#e4572e", "#f2a541", "#c8e087", "#76b041", "#ffffff"]);
+    runs(86, 3.5, 3, 12, 2, 2, ["#6b3fb8", "#ffffff", "#3c8a5c", "#d0a02b", "#9d2b2b", "#2a3a6b"]);
+    return { frame, goods };
+  }, []);
   return (
     <group>
-      <instancedMesh ref={keg} args={[undefined, undefined, nK]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.26, 0.26, 0.6, 12]} />
-        <Mat c="#c9ced4" metalness={0.55} roughness={0.35} />
-      </instancedMesh>
-      <instancedMesh ref={pal} args={[undefined, undefined, nP]} castShadow>
-        <boxGeometry args={[1.2, 0.14, 1.2]} />
-        <Mat c="#8e6a45" />
-      </instancedMesh>
-    </group>
-  );
-}
-
-function Prepa() {
-  const z = ZONES[2];
-  const items: React.ReactNode[] = [];
-  for (let i = 0; i < 3; i++) {
-    const x = z.x + 2 + i * 3.1;
-    items.push(<Box key={"a" + i} s={[0.12, 2, 4.6]} p={[x - 0.9, 1, z.z + 3.2]} c="#23407a" />);
-    items.push(<Box key={"b" + i} s={[0.12, 2, 4.6]} p={[x + 0.9, 1, z.z + 3.2]} c="#23407a" />);
-    for (let l = 0; l < 3; l++) items.push(<Box key={`p${i}${l}`} s={[1.9, 0.1, 4.6]} p={[x, 0.4 + l * 0.7, z.z + 3.2]} c="#e2721c" />);
-    for (let k = 0; k < 6; k++) items.push(<Box key={`c${i}${k}`} s={[0.5, 0.4, 0.6]} p={[x - 0.4 + (k % 2) * 0.8, 0.65 + (k >> 1) * 0.7, z.z + 1.6 + (k % 3) * 1.5]} c={["#d8b48a", "#ffffff", "#c04a4a", "#3f6fb5"][k % 4]} />);
-  }
-  [[2.3, 7.4], [5.4, 7.6], [8.4, 7.2]].forEach(([dx, dz], i) => {
-    items.push(<Box key={"pal" + i} s={[1.4, 0.18, 1]} p={[z.x + dx, 0.15, z.z + dz]} c="#b48a5a" />);
-    items.push(<Box key={"load" + i} s={[1.3, 0.9 + i * 0.2, 0.95]} p={[z.x + dx, 0.7 + i * 0.1, z.z + dz]} c={["#e8e2da", "#d2a36d", "#a83a3a"][i]} />);
-  });
-  return <group>{items}</group>;
-}
-
-function Reserve() {
-  const z = ZONES[3];
-  return (
-    <group>
-      {[[2.7, 2.4], [7.6, 2.4]].map(([dx, dz], i) => (
-        <group key={i} position={[z.x + dx, 0, z.z + dz]}>
-          <mesh position={[0, 1.35, 0]}>
-            <boxGeometry args={[3.6, 2.6, 3, 6, 4, 5]} />
-            <meshBasicMaterial color="#7d8794" wireframe />
-          </mesh>
-          <Box s={[3.4, 0.1, 2.8]} p={[0, 0.9, 0]} c="#23407a" />
-          <Box s={[3.4, 0.1, 2.8]} p={[0, 1.8, 0]} c="#23407a" />
-          {[0, 1, 2, 3, 4].map((k) => (
-            <Box key={k} s={[0.5, 0.5, 0.5]} p={[-1.2 + k * 0.6, 1.2, -0.5 + (k % 2) * 0.8]} c={["#6b3fb8", "#ffffff", "#3c8a5c", "#d0a02b", "#9d2b2b"][k]} />
-          ))}
+      <Boxes list={racks.up} c="#23407a" />
+      <Boxes list={racks.beam} c="#e2721c" />
+      <Boxes list={racks.pal} />
+      <Kegs list={kegs} />
+      <Boxes list={pals} c="#8e6a45" />
+      <Boxes list={loads} />
+      <Boxes list={glass} />
+      <Boxes list={shelves.frame} c="#2c3e66" />
+      <Boxes list={shelves.goods} cast={false} />
+      {/* cage grillagée de l'alcool */}
+      <mesh position={[92, 1.4, 6.5]}>
+        <boxGeometry args={[15, 2.8, 10, 15, 3, 10]} />
+        <meshBasicMaterial color="#7d8794" wireframe />
+      </mesh>
+      {/* bureau téléachat : postes */}
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <group key={i} position={[-8 + (i % 3) * 7, 0, 9 + Math.floor(i / 3) * 4.5]}>
+          <Box s={[2.4, 0.08, 1.2]} p={[0, 0.75, 0]} c="#f8f5f0" />
+          <Box s={[0.9, 0.55, 0.05]} p={[0, 1.1, -0.3]} c="#2a2d36" />
+          <Box s={[0.6, 0.9, 0.6]} p={[0, 0.45, 0.9]} c="#3a3f4b" />
         </group>
       ))}
     </group>
   );
 }
 
-function Bureau() {
-  const z = ZONES[5];
+/* Les 3 rideaux de quai en façade du bâtiment clair */
+function Doors() {
   return (
     <group>
-      {[0, 1, 2].map((i) => {
-        const x = z.x + 1.1 + i * 1.65;
-        return (
-          <group key={i}>
-            <Box s={[1.3, 0.08, 0.8]} p={[x, 0.75, z.z + 1.2]} c="#f8f5f0" />
-            <Box s={[0.08, 0.7, 0.08]} p={[x, 0.38, z.z + 1.2]} c="#f8f5f0" />
-            <Box s={[0.7, 0.45, 0.05]} p={[x, 1.05, z.z + 1]} c="#2a2d36" />
-          </group>
-        );
-      })}
+      {[34, 45, 56].map((x) => (
+        <group key={x} position={[x, 0, 12]}>
+          <Box s={[4.4, 5, 0.3]} p={[0, 2.5, 0]} c="#9aa3ad" metalness={0.4} roughness={0.5} />
+          {[0.6, 1.4, 2.2, 3, 3.8, 4.6].map((y) => (
+            <Box key={y} s={[4.4, 0.05, 0.34]} p={[0, y, 0]} c="#7d868f" cast={false} />
+          ))}
+          <Box s={[5.2, 0.5, 0.6]} p={[0, 5.3, 0]} c="#ce0013" />
+          <Box s={[4.6, 1.2, 3]} p={[0, 0.6, 1.6]} c="#8d857c" />
+        </group>
+      ))}
     </group>
   );
 }
@@ -249,7 +289,7 @@ export function Truck({ v, spot, selected, onSelect }: { v: DepotVehicle; spot: 
     if (halo.current) (halo.current.material as THREE.MeshBasicMaterial).opacity = selected ? 0.5 : v.state === "bad" ? 0.22 + Math.sin(clock.elapsedTime * 3) * 0.12 : 0.2;
   });
   return (
-    <group position={[spot[0], 0, spot[1]]} rotation={[0, spot[2], 0]} onClick={onSelect}>
+    <group position={[spot[0], 0, spot[1]]} rotation={[0, spot[2], 0]} scale={1.45} onClick={onSelect}>
       <mesh position={[-cabL / 2, H / 2 + 0.45, 0]} castShadow>
         <boxGeometry args={[L - cabL, H, 1.9]} />
         <Mat c="#f6f4f1" />
@@ -266,7 +306,7 @@ export function Truck({ v, spot, selected, onSelect }: { v: DepotVehicle; spot: 
         <boxGeometry args={[L - cabL + 0.02, 0.28, 1.92]} />
         <Mat c={col} />
       </mesh>
-      <mesh position={[-cabL / 2 + (L - cabL) / 2 - 0.6, H * 0.45 + 0.45, 0]}>
+      <mesh position={[-cabL / 2 + (L - cabL) / 2 - 0.6, H * 0.45 + 0.45, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[0.42, 0.42, 1.94, 24]} />
         <Mat c="#ce0013" />
       </mesh>
@@ -284,16 +324,17 @@ export function Truck({ v, spot, selected, onSelect }: { v: DepotVehicle; spot: 
   );
 }
 
-function Forklift() {
+function Forklift({ path }: { path: [number, number, number, number] }) {
   const g = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
     if (!g.current) return;
-    const t = clock.elapsedTime * 0.35;
-    g.current.position.set(-12 + ((Math.sin(t) + 1) / 2) * 17, 0, -1.6);
-    g.current.rotation.y = Math.cos(t) > 0 ? 0 : Math.PI;
+    const [x0, z0, x1, z1] = path;
+    const t = (Math.sin(clock.elapsedTime * 0.25) + 1) / 2;
+    g.current.position.set(x0 + (x1 - x0) * t, 0, z0 + (z1 - z0) * t);
+    g.current.rotation.y = Math.atan2(-(z1 - z0), x1 - x0) + (Math.cos(clock.elapsedTime * 0.25) > 0 ? 0 : Math.PI);
   });
   return (
-    <group ref={g}>
+    <group ref={g} scale={1.3}>
       <Box s={[1.2, 0.8, 0.8]} p={[0, 0.6, 0]} c="#e9b81f" />
       <Box s={[0.1, 2.2, 0.7]} p={[0.65, 1.1, 0]} c="#333333" />
       <Box s={[0.9, 0.9, 0.8]} p={[1.2, 0.55, 0]} c="#d2a36d" />
@@ -301,11 +342,10 @@ function Forklift() {
   );
 }
 
-function Pin({ id, info, onClick, active }: { id: ZoneId; info: DepotZoneInfo; onClick: () => void; active: boolean }) {
-  const z = ZONES.find((x) => x.id === id)!;
-  const y = z.flat ? 1.6 : z.low ? 4.4 : z.walls ? 5.6 : 4.2;
+function Pin({ id, info, onClick, active }: { id: ZoneId; info: DepotSummary["zones"][ZoneId]; onClick: () => void; active: boolean }) {
+  const z = zoneOf(id);
   return (
-    <Html position={[z.x + z.w / 2, y, z.z + z.d / 2]} center zIndexRange={[15, 0]}>
+    <Html position={[z.x + z.w / 2, z.pinY, z.z + z.d / 2]} center zIndexRange={[15, 0]}>
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
@@ -327,24 +367,24 @@ function Pin({ id, info, onClick, active }: { id: ZoneId; info: DepotZoneInfo; o
 }
 
 /* Caméra : glisse vers la sélection */
-function Rig({ focus, home }: { focus: THREE.Vector3 | null; home: { pos: THREE.Vector3; target: THREE.Vector3 } }) {
+function Rig({ focus, home }: { focus: { p: THREE.Vector3; dist: number } | null; home: { pos: THREE.Vector3; target: THREE.Vector3 } }) {
   const { camera, controls } = useThree() as unknown as { camera: THREE.PerspectiveCamera; controls: OrbitControlsImpl | null };
   const anim = useRef<{ t: number; fp: THREE.Vector3; tp: THREE.Vector3; ft: THREE.Vector3; tt: THREE.Vector3 } | null>(null);
   useEffect(() => {
     if (!controls) return;
-    const tt = focus ? focus.clone() : home.target.clone();
+    const tt = focus ? focus.p.clone() : home.target.clone();
     let tp: THREE.Vector3;
     if (focus) {
       const dir = camera.position.clone().sub(controls.target).normalize();
-      tp = focus.clone().add(dir.multiplyScalar(26));
-      tp.y = Math.max(tp.y, 15);
+      tp = focus.p.clone().add(dir.multiplyScalar(focus.dist));
+      tp.y = Math.max(tp.y, focus.dist * 0.55);
     } else tp = home.pos.clone();
     anim.current = { t: 0, fp: camera.position.clone(), tp, ft: controls.target.clone(), tt };
   }, [focus, controls, camera, home]);
   useFrame((_, dt) => {
     const a = anim.current;
     if (!a || !controls) return;
-    a.t = Math.min(1, a.t + dt / 1.1);
+    a.t = Math.min(1, a.t + dt / 1.2);
     const k = 1 - Math.pow(1 - a.t, 3);
     camera.position.lerpVectors(a.fp, a.tp, k);
     controls.target.lerpVectors(a.ft, a.tt, k);
@@ -376,13 +416,20 @@ export default function DepotScene({
     m.addEventListener("change", f);
     return () => m.removeEventListener("change", f);
   }, []);
-  const home = useMemo(() => ({ pos: new THREE.Vector3(22, 34, 46), target: new THREE.Vector3(-4, 0, 1) }), []);
+  // sur téléphone, l'écran est étroit : on recule et on centre sur les bâtiments
+  const home = useMemo(
+    () => (narrow ? { pos: new THREE.Vector3(150, 210, 215), target: new THREE.Vector3(10, 0, -2) } : { pos: new THREE.Vector3(-8, 100, 148), target: new THREE.Vector3(-36, 0, 2) }),
+    [narrow],
+  );
   const placed = summary.vehicles.slice(0, SPOTS.length).map((v, i) => ({ v, spot: SPOTS[i] }));
   const focus = useMemo(() => {
     if (!selection) return null;
-    if (selection.type === "zone") return center(selection.id);
+    if (selection.type === "zone") {
+      const z = zoneOf(selection.id);
+      return { p: center(selection.id), dist: Math.max(z.w, z.d) * 1.25 + 22 };
+    }
     const p = placed.find((x) => x.v.id === selection.id);
-    return p ? new THREE.Vector3(p.spot[0], 0, p.spot[1]) : null;
+    return p ? { p: new THREE.Vector3(p.spot[0], 0, p.spot[1]), dist: 28 } : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection]);
   const click = (s: Selection) => (e: ThreeEvent<MouseEvent>) => {
@@ -390,62 +437,74 @@ export default function DepotScene({
     if (e.delta > 6) return;
     onSelect(s);
   };
+  const pinned = ZONES.filter((z) => !narrow || summary.zones[z.id]?.alerts > 0 || (selection?.type === "zone" && selection.id === z.id));
   return (
-    <Canvas shadows dpr={[1, 1.75]} camera={{ position: [70, 90, 110], fov: 36, near: 0.5, far: 400 }} gl={{ antialias: true, alpha: true }} onPointerMissed={() => onSelect(null)}>
+    <Canvas shadows dpr={[1, 1.75]} camera={{ position: [80, 260, 330], fov: 36, near: 1, far: 1200 }} gl={{ antialias: true, alpha: true }} onPointerMissed={() => onSelect(null)}>
       <hemisphereLight args={["#fff4e8", "#6b5a4c", dark ? 0.5 : 0.8]} />
-      <directionalLight position={[30, 60, 25]} intensity={dark ? 0.9 : 1.2} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0006}>
-        <orthographicCamera attach="shadow-camera" args={[-50, 50, 40, -40, 1, 160]} />
+      <directionalLight position={[60, 140, 70]} intensity={dark ? 0.9 : 1.25} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0005}>
+        <orthographicCamera attach="shadow-camera" args={[-200, 200, 90, -90, 1, 500]} />
       </directionalLight>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-        <planeGeometry args={[200, 140]} />
-        <Mat c={dark ? "#2a2523" : "#e9e3db"} />
+      {/* sol, cour et route */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-40, -0.03, 5]} receiveShadow>
+        <planeGeometry args={[420, 200]} />
+        <Mat c={dark ? "#2a2523" : "#e7e1d8"} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-2, 0, 1.5]} receiveShadow>
-        <planeGeometry args={[64, 24]} />
-        <Mat c={dark ? "#1f1c1b" : "#b3aba2"} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-40, 0, 8]} receiveShadow>
+        <planeGeometry args={[290, 72]} />
+        <Mat c={dark ? "#211e1c" : "#b9b1a7"} />
       </mesh>
-      <Box s={[110, 0.05, 3.6]} p={[0, 0.01, 12.8]} c="#5e5853" cast={false} />
-      {Array.from({ length: 21 }, (_, i) => (
-        <Box key={i} s={[2.2, 0.06, 0.18]} p={[-50 + i * 5, 0.03, 12.8]} c="#f2eee9" cast={false} />
+      <Box s={[420, 0.05, 8]} p={[-40, 0.02, ROAD_Z]} c="#5e5853" cast={false} />
+      {Array.from({ length: 40 }, (_, i) => (
+        <Box key={i} s={[4, 0.06, 0.25]} p={[-245 + i * 10.5, 0.05, ROAD_Z]} c="#f2eee9" cast={false} />
       ))}
-      <Box s={[13.6, 6.5, 15]} p={[25, 3.25, -3.5]} c={dark ? "#3b3633" : "#d4cec6"} />
-      {[[-30, -12], [-25, -12.4], [-20, -12], [-34, -10], [-27, 15.8], [-6, 15.8], [6, 15.6], [22, 15.8]].map(([x, z], i) => (
+      {/* haie et arbres (bois au nord-ouest, comme sur la vue aérienne) */}
+      {[[-170, -28], [-160, -30], [-148, -27], [-136, -30], [-124, -28], [-112, -30], [-176, -18], [-120, 50], [-60, 50], [10, 50], [70, 50], [112, 30], [110, -10]].map(([x, z], i) => (
         <group key={i} position={[x, 0, z]}>
-          <Box s={[0.4, 1.4, 0.4]} p={[0, 0.7, 0]} c="#6b5040" />
-          <mesh position={[0, 2.8, 0]} castShadow>
-            <icosahedronGeometry args={[1.8 + (i % 3) * 0.35, 0]} />
+          <Box s={[0.7, 2.6, 0.7]} p={[0, 1.3, 0]} c="#6b5040" />
+          <mesh position={[0, 5.5, 0]} castShadow>
+            <icosahedronGeometry args={[3.6 + (i % 3) * 0.8, 0]} />
             <Mat c="#6f8f57" flatShading />
           </mesh>
         </group>
       ))}
 
+      {/* bâtiments : clair (soft, vins, sirop, alcool) et sombres */}
+      <Shell x={28} z={-35} w={72} d={47} h={8.5} roof="#cfc8bf" wall="#efe9e1" front={2.4} />
+      <Box s={[0.15, 0.05, 36]} p={[58, 0.14, -17]} c="#2f9e5b" cast={false} />
+      <Shell x={-95} z={-22} w={80} d={36} h={9} roof="#2d2f36" />
+      <Shell x={-15} z={-26} w={22} d={30} h={9} roof="#2d2f36" />
+      <Shell x={7} z={-8} w={21} d={14} h={8} roof="#2d2f36" />
+      <Shell x={-12} z={6} w={26} d={11} h={4.5} roof="#2d2f36" wall="#f1ebe3" front={1.2} />
+
       {ZONES.map((z) => {
         const info = summary.zones[z.id];
         const on = selection?.type === "zone" && selection.id === z.id;
         return (
-          <group key={z.id}>
-            <mesh position={[z.x + z.w / 2, 0.06, z.z + z.d / 2]} receiveShadow onClick={interactive ? click({ type: "zone", id: z.id }) : undefined}>
-              <boxGeometry args={[z.w, 0.12, z.d]} />
-              <Mat c={z.color} emissive={on ? "#ce0013" : info.alerts ? "#d6333a" : "#000000"} emissiveIntensity={on ? 0.3 : info.alerts ? 0.12 : 0} />
-            </mesh>
-            {z.walls && <Walls z={z} />}
-          </group>
+          <mesh key={z.id} position={[z.x + z.w / 2, 0.06, z.z + z.d / 2]} receiveShadow onClick={interactive ? click({ type: "zone", id: z.id }) : undefined}>
+            <boxGeometry args={[z.w, 0.12, z.d]} />
+            <Mat c={z.color} emissive={on ? "#ce0013" : info?.alerts ? "#d6333a" : "#000000"} emissiveIntensity={on ? 0.28 : info?.alerts ? 0.12 : 0} />
+          </mesh>
         );
       })}
-      {[-1.4, 1.2].map((zz) => (
-        <Box key={zz} s={[19, 0.04, 0.12]} p={[-3.1, 0.13, zz]} c="#e9c22b" cast={false} />
+      {/* marquage au sol des quais */}
+      {[29, 39.5, 50.5, 61].map((x) => (
+        <Box key={x} s={[0.25, 0.04, 9]} p={[x, 0.14, 16.5]} c="#e9c22b" cast={false} />
       ))}
-      <Racks />
-      <Kegs />
-      <Prepa />
-      <Reserve />
-      <Bureau />
-      <Forklift />
+      <Doors />
+      <Interior />
+      <Forklift path={[30, -1, 56, -1]} />
+      <Forklift path={[-85, 10, -30, 10]} />
       {placed.map(({ v, spot }) => (
         <Truck key={v.id} v={v} spot={spot} selected={selection?.type === "vehicle" && selection.id === v.id} onSelect={click({ type: "vehicle", id: v.id })} />
       ))}
-      {interactive && ZONES.filter((z) => !narrow || summary.zones[z.id].alerts > 0 || (selection?.type === "zone" && selection.id === z.id)).map((z) => <Pin key={z.id} id={z.id} info={summary.zones[z.id]} active={selection?.type === "zone" && selection.id === z.id} onClick={() => onSelect({ type: "zone", id: z.id })} />)}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI * 0.44} minDistance={12} maxDistance={110} enablePan={interactive} enableZoom={interactive} autoRotate={autoRotate} autoRotateSpeed={0.5} target={[-5, 0, 0]} />
+      {/* le tout premier repère HTML de drei ne s'affiche pas toujours : on lui donne un repère vide */}
+      {interactive && (
+        <Html position={[0, -50, 0]}>
+          <span />
+        </Html>
+      )}
+      {interactive && pinned.map((z) => <Pin key={z.id} id={z.id} info={summary.zones[z.id]} active={selection?.type === "zone" && selection.id === z.id} onClick={() => onSelect({ type: "zone", id: z.id })} />)}
+      <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI * 0.45} minDistance={18} maxDistance={420} enablePan={interactive} enableZoom={interactive} autoRotate={autoRotate} autoRotateSpeed={0.4} target={[-30, 0, 0]} />
       <Rig focus={focus} home={home} />
     </Canvas>
   );

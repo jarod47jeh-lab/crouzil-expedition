@@ -73,7 +73,7 @@ export function NotesView({
           )
         }
       />
-      <DepotBanner focus="quais" caption="Quais de chargement" summary={minimalSummary([], { quais: notes.filter((n) => n.status === "todo" && n.level === "attention").length })} />
+      <DepotBanner focus="quais" caption="Quais" summary={minimalSummary([], { quais: notes.filter((n) => n.status === "todo" && n.level === "attention").length })} />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="À traiter" value={todo} tone={todo ? "bad" : "ok"} icon={<Siren className="h-5 w-5" />} sub="pas encore prises en compte" />
         <Kpi index={1} label="Aujourd'hui et demain" value={soon} tone={soon ? "warn" : "ok"} icon={<CalendarDays className="h-5 w-5" />} sub="y compris les échues non closes" />

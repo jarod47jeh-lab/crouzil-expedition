@@ -1,7 +1,7 @@
-import type { DepotSummary, DepotVehicle, DepotZoneInfo } from "./summary";
+import { ZONE_IDS, type DepotSummary, type DepotVehicle, type DepotZoneInfo, type ZoneId } from "./summary";
 
-/** Résumé minimal : pour les bandeaux 3D des pages, sans tout recalculer */
-export function minimalSummary(vehicles: DepotVehicle[] = [], alerts: Partial<Record<DepotZoneInfo["id"], number>> = {}): DepotSummary {
-  const z = (id: DepotZoneInfo["id"]): DepotZoneInfo => ({ id, alerts: alerts[id] || 0, lines: [] });
-  return { vehicles, teams: [], zones: { cour: z("cour"), racks: z("racks"), prepa: z("prepa"), reserve: z("reserve"), quais: z("quais"), bureau: z("bureau"), parking: z("parking") } };
+/** Résumé de base : chaque zone vide, complété ensuite par la page */
+export function minimalSummary(vehicles: DepotVehicle[] = [], alerts: Partial<Record<ZoneId, number>> = {}, extra: Partial<Record<ZoneId, Partial<DepotZoneInfo>>> = {}): DepotSummary {
+  const zones = Object.fromEntries(ZONE_IDS.map((id) => [id, { id, alerts: alerts[id] || 0, lines: [], ...extra[id] }])) as Record<ZoneId, DepotZoneInfo>;
+  return { vehicles, teams: [], zones };
 }

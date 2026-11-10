@@ -73,7 +73,7 @@ export function ErrorsView(p: Props) {
           </>
         }
       />
-      <DepotBanner focus="prepa" caption="Zone préparation" summary={minimalSummary()} />
+      <DepotBanner focus="depose" caption="Dépose commandes" summary={minimalSummary()} />
       <Tabs
         id="err-tabs"
         active={p.tab}
