@@ -73,6 +73,7 @@ scripts/              reprise des données de l'ancien artefact
    - `supabase/migrations/20261103000001_teams_office.sql`
    - `supabase/migrations/20261106000000_tasks.sql`
    - `supabase/migrations/20261110000000_equipment.sql`
+   - `supabase/migrations/20261110000001_staff_zone_avatar_archive.sql`
 3. Dans **Authentication › Sign In / Providers** : désactivez **Allow new users to sign up**. Seules les personnes invitées pourront entrer.
 4. Dans **Project Settings › API**, copiez l'**URL**, la clé **anon public** et la clé **service_role**.
 5. (Recommandé) Dans **Database › Extensions**, activez **pg_cron**, puis relancez la fin du fichier `init.sql` (bloc « Purge automatique »). La corbeille se videra alors toute seule après 30 jours. Sinon, un bouton le fait dans la page Corbeille.
