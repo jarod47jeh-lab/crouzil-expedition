@@ -7,15 +7,16 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DepotTiles } from "@/components/depot/overview";
 import { SelectionPanel } from "@/components/depot/hero";
 import type { Selection } from "@/components/depot/scene";
-import { buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
+import { buildStaff, buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
+import { absencesOn } from "@/lib/domain/conges";
 import { minimalSummary } from "@/components/depot/summary-empty";
 import { forDashboard } from "@/lib/domain/notes";
 import { iso, today } from "@/lib/domain/dates";
-import type { Asset, DeliveryNote, Repair } from "@/lib/types";
+import type { Asset, DayMark, DeliveryNote, Employee, LeaveRequest, Repair } from "@/lib/types";
 
 const Scene = dynamic(() => import("@/components/depot/scene"), { ssr: false });
 
-export function DepotView({ assets, repairs, notes }: { assets: Asset[]; repairs: Repair[]; notes: DeliveryNote[] }) {
+export function DepotView({ assets, repairs, notes, employees, leaves, marks }: { assets: Asset[]; repairs: Repair[]; notes: DeliveryNote[]; employees: Employee[]; leaves: LeaveRequest[]; marks: DayMark[] }) {
   const [sel, setSel] = useState<Selection>(null);
   const s: DepotSummary = useMemo(() => {
     const ti = iso(today());
@@ -24,7 +25,7 @@ export function DepotView({ assets, repairs, notes }: { assets: Asset[]; repairs
     const deliv = dash.filter((n) => n.kind !== "recuperation");
     const recup = notes.filter((n) => (n.kind === "recuperation" || n.kind === "les_deux") && n.status !== "done");
     const down = vehicles.filter((v) => v.state === "bad").length;
-    return minimalSummary(
+    const base = minimalSummary(
       vehicles,
       { quais: deliv.filter((n) => n.level === "attention" && n.status === "todo").length, vide: recup.filter((n) => n.status === "todo").length, parking: down },
       {
@@ -36,7 +37,8 @@ export function DepotView({ assets, repairs, notes }: { assets: Asset[]; repairs
         alcool: { stat: "2 niveaux, 2 m maxi, en cage" },
       },
     );
-  }, [assets, repairs, notes]);
+    return { ...base, staff: buildStaff(employees, absencesOn(today(), leaves, marks)) };
+  }, [assets, repairs, notes, employees, leaves, marks]);
   return (
     <>
       <PageHeader title="Plan du dépôt" icon={<Warehouse className="h-6 w-6" />} subtitle="Ayguesvives · zones, quais et véhicules en direct. Racks de 30 m sur 3 niveaux, plafond à 8 m." />

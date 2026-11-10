@@ -1,12 +1,15 @@
 import type { FieldDef } from "@/components/ui/entity-form";
 import { TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
 import { SIZE_KINDS } from "@/lib/domain/equipment";
+import { ZONE_META } from "@/components/depot/overview";
+import { ZONE_IDS } from "@/components/depot/summary";
 import type { Employee } from "@/lib/types";
 
 export const EMPLOYEE_FIELDS: FieldDef[] = [
   { name: "name", label: "Nom affiché", required: true },
   { name: "job_title", label: "Fonction", placeholder: "Chauffeur-livreur" },
   { name: "team", label: "Équipe", type: "select", required: true, options: TEAM_ORDER.map((k) => [k, TEAMS[k]] as [string, string]) },
+  { name: "zone", label: "Poste dans le dépôt", type: "select", options: ZONE_IDS.map((z) => [z, ZONE_META[z].name] as [string, string]), hint: "Vide : selon l'équipe (quais, soft, bureau)" },
   { name: "sort_order", label: "Ordre d'affichage", type: "number" },
   { name: "freelance", label: "Freelance (déclenché à la journée)", type: "checkbox", full: true, when: (v) => v.team === "chauf" || v.team === "prep" || !!v.freelance },
   { name: "cp_annual", label: "CP annuels (jours)", type: "number", step: "0.5", when: (v) => !v.freelance },

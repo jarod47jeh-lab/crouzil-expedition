@@ -1,4 +1,5 @@
-import type { Asset, DeliveryNote, Repair } from "@/lib/types";
+import type { Absence } from "@/lib/domain/conges";
+import type { Asset, DeliveryNote, Employee, Repair, Team } from "@/lib/types";
 
 /** Zones du dépôt d'Ayguesvives, d'après le plan annoté */
 export const ZONE_IDS = ["vide", "verres", "futs", "patio", "depose", "bureau", "soft", "vins", "sirop", "alcool", "quais", "parking"] as const;
@@ -20,7 +21,22 @@ export interface DepotZoneInfo {
   lines: { text: string; sub?: string; tone: "ok" | "warn" | "bad" }[];
   stat?: string;
 }
+/** Zone de travail par défaut de chaque équipe */
+export const TEAM_ZONE: Record<Team, ZoneId> = { chauf: "quais", prep: "soft", commande: "bureau", bureau: "bureau" };
+export const zoneOfEmployee = (e: Pick<Employee, "zone" | "team">): ZoneId => ((ZONE_IDS as readonly string[]).includes(e.zone || "") ? (e.zone as ZoneId) : TEAM_ZONE[e.team]);
+
+export interface DepotStaff {
+  id: string;
+  name: string;
+  team: Team;
+  zone: ZoneId;
+  avatar: Employee["avatar"];
+  present: boolean;
+  /** motif d'absence ou « présent » */
+  status: string;
+}
 export interface DepotSummary {
+  staff?: DepotStaff[];
   vehicles: DepotVehicle[];
   zones: Record<DepotZoneInfo["id"], DepotZoneInfo>;
   teams: { key: string; label: string; present: number; total: number }[];
@@ -53,4 +69,15 @@ export function buildVehicles(assets: Asset[], repairs: Repair[], today: string)
 
 export function noteLine(n: DeliveryNote) {
   return { text: `${n.client_name ? n.client_name + " : " : ""}${n.body}`, sub: n.route || undefined, tone: (n.level === "attention" ? "bad" : "warn") as "bad" | "warn" };
+}
+
+const ABS_LABEL: Record<string, string> = { CP: "Congés payés", RTT: "RTT", REC: "Récupération", MAL: "Maladie / arrêt", FOR: "Formation", EVT: "Événement familial", CSS: "Congé sans solde", AUI: "Autre absence", RDV: "Rendez-vous", ABS: "Absence" };
+/** Le personnel du jour, avec sa zone et sa présence */
+export function buildStaff(employees: Employee[], absences: Absence[]): DepotStaff[] {
+  return employees
+    .filter((e) => e.active && !e.freelance)
+    .map((e) => {
+      const a = absences.find((x) => x.employee_id === e.id && !x.pending);
+      return { id: e.id, name: e.name, team: e.team, zone: zoneOfEmployee(e), avatar: e.avatar, present: !a, status: a ? ABS_LABEL[a.type] || a.type : "Présent" };
+    });
 }

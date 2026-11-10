@@ -3,14 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-type Kind = "text" | "num" | "int" | "bool" | "date" | "uuid" | "list";
+type Kind = "text" | "num" | "int" | "bool" | "date" | "uuid" | "list" | "json";
 
 /** Tables modifiables depuis l'interface et colonnes autorisées (avec leur type). */
 const SCHEMA: Record<string, Record<string, Kind>> = {
   employees: {
     name: "text", job_title: "text", team: "text", freelance: "bool", cp_annual: "num", cp_carryover: "num", rtt_annual: "num",
     rec_due: "num", sort_order: "int", phone: "text", email: "text", hired_on: "date", notes: "text", active: "bool",
-    size_top: "text", size_bottom: "text", size_shoe: "text", size_gloves: "text",
+    size_top: "text", size_bottom: "text", size_shoe: "text", size_gloves: "text", zone: "text", avatar: "json",
   },
   leave_requests: { employee_id: "uuid", type: "text", start_date: "date", end_date: "date", status: "text", comment: "text" },
   assets: {
@@ -30,7 +30,7 @@ const SCHEMA: Record<string, Record<string, Kind>> = {
   announcements: { kind: "text", tool: "text", body: "text", expires_on: "date" },
   delivery_notes: {
     level: "text", kind: "text", client_id: "uuid", client_name: "text", due_date: "date", until_date: "date", permanent: "bool",
-    route: "text", source: "text", source_name: "text", body: "text", status: "text",
+    route: "text", source: "text", source_name: "text", body: "text", status: "text", closure_note: "text",
   },
   equipment_items: { name: "text", category: "text", norm: "text", sized: "text", qty_per_person: "int", renewal_months: "int", teams: "list", position: "int", active: "bool" },
   equipment_issues: { employee_id: "uuid", item_id: "uuid", size: "text", qty: "int", issued_on: "date", signed: "bool", returned_on: "date", note: "text" },
@@ -69,6 +69,7 @@ function revalidate(table: string) {
 function coerce(kind: Kind, v: unknown) {
   if (v === undefined) return undefined;
   if (kind === "bool") return v === true || v === "true" || v === "on" || v === "1";
+  if (kind === "json") return v && typeof v === "object" ? v : null;
   if (kind === "list") {
     const a = (Array.isArray(v) ? v : String(v ?? "").split(",")).map((x) => String(x).trim()).filter(Boolean);
     return a.length ? a : null;
@@ -321,14 +322,19 @@ export async function removeRepairPhoto(id: string, path: string, repairId: stri
   return { ok: true };
 }
 
-export async function setNoteStatus(ids: string[], status: "todo" | "ack" | "done"): Promise<ActionResult> {
+export async function setNoteStatus(ids: string[], status: "todo" | "ack" | "done", closureNote?: string): Promise<ActionResult> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { data, error } = await supabase
     .from("delivery_notes")
-    .update({ status, handled_at: status === "todo" ? null : new Date().toISOString(), handled_by: status === "todo" ? null : user?.id })
+    .update({
+      status,
+      handled_at: status === "todo" ? null : new Date().toISOString(),
+      handled_by: status === "todo" ? null : user?.id,
+      ...(status === "done" ? { closure_note: closureNote?.trim() || null } : {}),
+    })
     .in("id", ids)
     .select("id");
   if (error) return { ok: false, error: frError(error.message) };

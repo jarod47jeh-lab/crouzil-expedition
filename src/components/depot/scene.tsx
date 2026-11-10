@@ -3,17 +3,35 @@
    Unité : 1 = 1 mètre. x vers l'est, z vers le sud (la route est au sud).
    Bâtiment clair : soft, vins, sirop, alcool, 3 rideaux de quai en façade.
    Bâtiments sombres : verres et fûts, fûts, dépose commandes, bureau téléachat. */
-import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
+import {
+  Canvas,
+  useFrame,
+  useThree,
+  type ThreeEvent,
+} from "@react-three/fiber";
+import { OrbitControls } from "@react-three/drei";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import type { DepotSummary, DepotVehicle, ZoneId } from "./summary";
+import type { DepotStaff, DepotSummary, DepotVehicle, ZoneId } from "./summary";
+import { avatarOf, HAIR_COLORS, SKINS, TEAM_SHIRT } from "@/lib/domain/avatar";
 import { ZONE_META } from "./overview";
 
-export type Selection = { type: "zone"; id: ZoneId } | { type: "vehicle"; id: string } | null;
+export type Selection =
+  | { type: "zone"; id: ZoneId }
+  | { type: "vehicle"; id: string }
+  | { type: "staff"; id: string }
+  | null;
 
-type Zone = { id: ZoneId; x: number; z: number; w: number; d: number; color: string; pinY: number };
+type Zone = {
+  id: ZoneId;
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  color: string;
+  pinY: number;
+};
 /* Emprise au sol de chaque zone (m) */
 export const ZONES: Zone[] = [
   { id: "vide", x: -178, z: -16, w: 80, d: 46, color: "#cfc4b6", pinY: 4 },
@@ -65,11 +83,25 @@ function useDark() {
   return dark;
 }
 
-export function Mat({ c, ...rest }: { c: string } & Partial<THREE.MeshStandardMaterialParameters>) {
+export function Mat({
+  c,
+  ...rest
+}: { c: string } & Partial<THREE.MeshStandardMaterialParameters>) {
   return <meshStandardMaterial color={c} roughness={0.85} {...rest} />;
 }
 
-export function Box({ s, p, c, cast = true, ...rest }: { s: [number, number, number]; p: [number, number, number]; c: string; cast?: boolean } & Partial<THREE.MeshStandardMaterialParameters>) {
+export function Box({
+  s,
+  p,
+  c,
+  cast = true,
+  ...rest
+}: {
+  s: [number, number, number];
+  p: [number, number, number];
+  c: string;
+  cast?: boolean;
+} & Partial<THREE.MeshStandardMaterialParameters>) {
   return (
     <mesh position={p} castShadow={cast} receiveShadow>
       <boxGeometry args={s} />
@@ -79,12 +111,19 @@ export function Box({ s, p, c, cast = true, ...rest }: { s: [number, number, num
 }
 
 /* Boîtes instanciées : une seule géométrie pour des centaines d'objets */
-function useBoxes(list: { p: [number, number, number]; s: [number, number, number]; c?: string }[]) {
+function useBoxes(
+  list: {
+    p: [number, number, number];
+    s: [number, number, number];
+    c?: string;
+  }[],
+) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     const m = ref.current;
     if (!m) return;
-    const o = new THREE.Object3D(), col = new THREE.Color();
+    const o = new THREE.Object3D(),
+      col = new THREE.Color();
     list.forEach((b, i) => {
       o.position.set(...b.p);
       o.scale.set(...b.s);
@@ -97,11 +136,29 @@ function useBoxes(list: { p: [number, number, number]; s: [number, number, numbe
   }, [list]);
   return ref;
 }
-function Boxes({ list, c = "#ffffff", cast = true, ...rest }: { list: { p: [number, number, number]; s: [number, number, number]; c?: string }[]; c?: string; cast?: boolean } & Partial<THREE.MeshStandardMaterialParameters>) {
+function Boxes({
+  list,
+  c = "#ffffff",
+  cast = true,
+  ...rest
+}: {
+  list: {
+    p: [number, number, number];
+    s: [number, number, number];
+    c?: string;
+  }[];
+  c?: string;
+  cast?: boolean;
+} & Partial<THREE.MeshStandardMaterialParameters>) {
   const ref = useBoxes(list);
   if (!list.length) return null;
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow={cast} receiveShadow>
+    <instancedMesh
+      ref={ref}
+      args={[undefined, undefined, list.length]}
+      castShadow={cast}
+      receiveShadow
+    >
       <boxGeometry args={[1, 1, 1]} />
       <Mat c={c} {...rest} />
     </instancedMesh>
@@ -119,7 +176,11 @@ function Kegs({ list }: { list: [number, number, number][] }) {
     ref.current!.instanceMatrix.needsUpdate = true;
   }, [list]);
   return (
-    <instancedMesh ref={ref} args={[undefined, undefined, list.length]} castShadow>
+    <instancedMesh
+      ref={ref}
+      args={[undefined, undefined, list.length]}
+      castShadow
+    >
       <cylinderGeometry args={[0.27, 0.27, 0.6, 10]} />
       <Mat c="#c4cad2" metalness={0.55} roughness={0.35} />
     </instancedMesh>
@@ -127,16 +188,42 @@ function Kegs({ list }: { list: [number, number, number][] }) {
 }
 
 /* Pile de fûts sur palettes : 4 fûts par palette, h palettes */
-function kegStack(x: number, z: number, h: number, kegs: [number, number, number][], pals: { p: [number, number, number]; s: [number, number, number] }[]) {
+function kegStack(
+  x: number,
+  z: number,
+  h: number,
+  kegs: [number, number, number][],
+  pals: { p: [number, number, number]; s: [number, number, number] }[],
+) {
   for (let l = 0; l < h; l++) {
     const y = l * 0.78;
     pals.push({ p: [x, y + 0.07, z], s: [1.2, 0.14, 1.2] });
-    for (let a = 0; a < 2; a++) for (let b = 0; b < 2; b++) kegs.push([x - 0.28 + a * 0.56, y + 0.45, z - 0.28 + b * 0.56]);
+    for (let a = 0; a < 2; a++)
+      for (let b = 0; b < 2; b++)
+        kegs.push([x - 0.28 + a * 0.56, y + 0.45, z - 0.28 + b * 0.56]);
   }
 }
 
 /* Bâtiment en coupe : murs du fond et des côtés pleine hauteur, façade basse pour voir dedans */
-function Shell({ x, z, w, d, h, roof, wall = "#ece5dc", front = 2.2 }: { x: number; z: number; w: number; d: number; h: number; roof: string; wall?: string; front?: number }) {
+function Shell({
+  x,
+  z,
+  w,
+  d,
+  h,
+  roof,
+  wall = "#ece5dc",
+  front = 2.2,
+}: {
+  x: number;
+  z: number;
+  w: number;
+  d: number;
+  h: number;
+  roof: string;
+  wall?: string;
+  front?: number;
+}) {
   const t = 0.4;
   return (
     <group>
@@ -155,23 +242,48 @@ function Shell({ x, z, w, d, h, roof, wall = "#ece5dc", front = 2.2 }: { x: numb
 /* Racks : 30 m de long, 6 m de haut, 3 niveaux, en double rangée dos à dos */
 function useRacks() {
   return useMemo(() => {
-    const up: { p: [number, number, number]; s: [number, number, number] }[] = [];
+    const up: { p: [number, number, number]; s: [number, number, number] }[] =
+      [];
     const beam: typeof up = [];
-    const pal: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
-    const cols = ["#d8b48a", "#efebe5", "#c9a37a", "#9eb7c9", "#e9e3dc", "#b54d3a", "#d9cfbf", "#7f9a6f", "#e8c3c8"];
+    const pal: {
+      p: [number, number, number];
+      s: [number, number, number];
+      c: string;
+    }[] = [];
+    const cols = [
+      "#d8b48a",
+      "#efebe5",
+      "#c9a37a",
+      "#9eb7c9",
+      "#e9e3dc",
+      "#b54d3a",
+      "#d9cfbf",
+      "#7f9a6f",
+      "#e8c3c8",
+    ];
     const run = (x: number, z0: number) => {
-      const bays = 11, bay = 2.7;
+      const bays = 11,
+        bay = 2.7;
       for (let s = 0; s < 2; s++) {
         const xx = x + s * 1.2;
-        for (let b = 0; b <= bays; b++) up.push({ p: [xx, 3, z0 + b * bay], s: [0.12, 6, 0.12] });
+        for (let b = 0; b <= bays; b++)
+          up.push({ p: [xx, 3, z0 + b * bay], s: [0.12, 6, 0.12] });
         for (let b = 0; b < bays; b++)
           for (let l = 0; l < 3; l++) {
             const y = 0.15 + l * 2;
-            beam.push({ p: [xx, y + (l ? 0 : 0), z0 + b * bay + bay / 2], s: [0.1, 0.14, bay] });
+            beam.push({
+              p: [xx, y + (l ? 0 : 0), z0 + b * bay + bay / 2],
+              s: [0.1, 0.14, bay],
+            });
             for (let k = 0; k < 2; k++) {
-              const seed = (Math.round(x) * 7 + b * 13 + l * 5 + k * 3 + s) % 17;
+              const seed =
+                (Math.round(x) * 7 + b * 13 + l * 5 + k * 3 + s) % 17;
               if (seed === 0 || seed === 9) continue;
-              pal.push({ p: [xx, y + 0.85, z0 + b * bay + 0.68 + k * 1.34], s: [1.0, 1.4 - (seed % 3) * 0.15, 1.15], c: cols[seed % cols.length] });
+              pal.push({
+                p: [xx, y + 0.85, z0 + b * bay + 0.68 + k * 1.34],
+                s: [1.0, 1.4 - (seed % 3) * 0.15, 1.15],
+                c: cols[seed % cols.length],
+              });
             }
           }
       }
@@ -187,18 +299,49 @@ function Interior() {
   const racks = useRacks();
   const { kegs, pals, loads, glass } = useMemo(() => {
     const kegs: [number, number, number][] = [];
-    const pals: { p: [number, number, number]; s: [number, number, number] }[] = [];
-    const loads: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
+    const pals: { p: [number, number, number]; s: [number, number, number] }[] =
+      [];
+    const loads: {
+      p: [number, number, number];
+      s: [number, number, number];
+      c: string;
+    }[] = [];
     const glass: typeof loads = [];
     // Fûts (bâtiment) : blocs de fûts sur palettes
-    for (let i = 0; i < 7; i++) for (let j = 0; j < 9; j++) if ((i + j) % 5) kegStack(-12 + i * 2.6, -23 + j * 2.8, 2 + ((i * 3 + j) % 3), kegs, pals);
+    for (let i = 0; i < 7; i++)
+      for (let j = 0; j < 9; j++)
+        if ((i + j) % 5)
+          kegStack(
+            -12 + i * 2.6,
+            -23 + j * 2.8,
+            2 + ((i * 3 + j) % 3),
+            kegs,
+            pals,
+          );
     // Patio : fûts au pied du bardage, comme sur la photo
-    for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) kegStack(9.5 + i * 2.9, -23.5 + j * 3.3, 3 + ((i + j * 2) % 4), kegs, pals);
+    for (let i = 0; i < 6; i++)
+      for (let j = 0; j < 4; j++)
+        kegStack(
+          9.5 + i * 2.9,
+          -23.5 + j * 3.3,
+          3 + ((i + j * 2) % 4),
+          kegs,
+          pals,
+        );
     // Verres et fûts : palettes de verres filmées et fûts
     for (let i = 0; i < 16; i++)
       for (let j = 0; j < 5; j++) {
-        const x = -91 + i * 4.6, z = -18 + j * 5.5;
-        if (i < 9) glass.push({ p: [x, 0.85, z], s: [1.2, 1.6, 1.0], c: ["#f3f1ec", "#e7ecef", "#ecdfc8"][(i + j) % 3] }, { p: [x + 1.5, 0.85, z], s: [1.2, 1.6, 1.0], c: "#f3f1ec" });
+        const x = -91 + i * 4.6,
+          z = -18 + j * 5.5;
+        if (i < 9)
+          glass.push(
+            {
+              p: [x, 0.85, z],
+              s: [1.2, 1.6, 1.0],
+              c: ["#f3f1ec", "#e7ecef", "#ecdfc8"][(i + j) % 3],
+            },
+            { p: [x + 1.5, 0.85, z], s: [1.2, 1.6, 1.0], c: "#f3f1ec" },
+          );
         else kegStack(x, z, 2 + ((i + j) % 3), kegs, pals);
       }
     // Vides : retours éparpillés dans la cour
@@ -206,32 +349,85 @@ function Interior() {
       for (let j = 0; j < 6; j++) {
         const r = (i * 31 + j * 17) % 11;
         if (r > 6) continue;
-        const x = -172 + i * 5.4 + (r % 3), z = -10 + j * 6.5 + (r % 2) * 1.5;
+        const x = -172 + i * 5.4 + (r % 3),
+          z = -10 + j * 6.5 + (r % 2) * 1.5;
         if (r % 2) kegStack(x, z, 1 + (r % 3), kegs, pals);
-        else loads.push({ p: [x, 0.5 + r * 0.1, z], s: [1.2, 1 + r * 0.2, 1.0], c: ["#5f7fa0", "#b7a07a", "#7a8f5a", "#a35a4a"][r % 4] });
+        else
+          loads.push({
+            p: [x, 0.5 + r * 0.1, z],
+            s: [1.2, 1 + r * 0.2, 1.0],
+            c: ["#5f7fa0", "#b7a07a", "#7a8f5a", "#a35a4a"][r % 4],
+          });
       }
     // Dépose commandes : palettes préparées, filmées, alignées
-    for (let i = 0; i < 6; i++) for (let j = 0; j < 3; j++) loads.push({ p: [10 + i * 3, 0.8, -5.5 + j * 3.6], s: [1.2, 1.5, 1.0], c: ["#e9e3dc", "#d2a36d", "#c4a882", "#b9cfe0"][(i + j) % 4] });
+    for (let i = 0; i < 6; i++)
+      for (let j = 0; j < 3; j++)
+        loads.push({
+          p: [10 + i * 3, 0.8, -5.5 + j * 3.6],
+          s: [1.2, 1.5, 1.0],
+          c: ["#e9e3dc", "#d2a36d", "#c4a882", "#b9cfe0"][(i + j) % 4],
+        });
     // Devant les quais, dans le soft : palettes en attente de chargement
-    for (let i = 0; i < 8; i++) loads.push({ p: [31 + i * 3.4, 0.8, 7], s: [1.2, 1.5, 1.0], c: ["#e9e3dc", "#d2a36d", "#9eb7c9"][i % 3] });
+    for (let i = 0; i < 8; i++)
+      loads.push({
+        p: [31 + i * 3.4, 0.8, 7],
+        s: [1.2, 1.5, 1.0],
+        c: ["#e9e3dc", "#d2a36d", "#9eb7c9"][i % 3],
+      });
     return { kegs, pals, loads, glass };
   }, []);
   // Sirop : étagères basses ; alcool : 2 niveaux, 2 m maxi, en cage
   const shelves = useMemo(() => {
-    const frame: { p: [number, number, number]; s: [number, number, number] }[] = [];
-    const goods: { p: [number, number, number]; s: [number, number, number]; c: string }[] = [];
-    const runs = (x0: number, z0: number, n: number, len: number, h: number, levels: number, palette: string[]) => {
+    const frame: {
+      p: [number, number, number];
+      s: [number, number, number];
+    }[] = [];
+    const goods: {
+      p: [number, number, number];
+      s: [number, number, number];
+      c: string;
+    }[] = [];
+    const runs = (
+      x0: number,
+      z0: number,
+      n: number,
+      len: number,
+      h: number,
+      levels: number,
+      palette: string[],
+    ) => {
       for (let r = 0; r < n; r++) {
         const z = z0 + r * 3;
         frame.push({ p: [x0 + len / 2, h / 2, z - 0.45], s: [len, h, 0.06] });
         for (let l = 0; l < levels; l++) {
-          frame.push({ p: [x0 + len / 2, 0.2 + (l * h) / levels, z], s: [len, 0.06, 0.9] });
-          for (let k = 0; k < len / 0.7 - 1; k++) goods.push({ p: [x0 + 0.5 + k * 0.7, 0.45 + (l * h) / levels, z], s: [0.5, 0.45, 0.6], c: palette[(k + l + r) % palette.length] });
+          frame.push({
+            p: [x0 + len / 2, 0.2 + (l * h) / levels, z],
+            s: [len, 0.06, 0.9],
+          });
+          for (let k = 0; k < len / 0.7 - 1; k++)
+            goods.push({
+              p: [x0 + 0.5 + k * 0.7, 0.45 + (l * h) / levels, z],
+              s: [0.5, 0.45, 0.6],
+              c: palette[(k + l + r) % palette.length],
+            });
         }
       }
     };
-    runs(60, 3.5, 3, 22, 2.2, 3, ["#e4572e", "#f2a541", "#c8e087", "#76b041", "#ffffff"]);
-    runs(86, 3.5, 3, 12, 2, 2, ["#6b3fb8", "#ffffff", "#3c8a5c", "#d0a02b", "#9d2b2b", "#2a3a6b"]);
+    runs(60, 3.5, 3, 22, 2.2, 3, [
+      "#e4572e",
+      "#f2a541",
+      "#c8e087",
+      "#76b041",
+      "#ffffff",
+    ]);
+    runs(86, 3.5, 3, 12, 2, 2, [
+      "#6b3fb8",
+      "#ffffff",
+      "#3c8a5c",
+      "#d0a02b",
+      "#9d2b2b",
+      "#2a3a6b",
+    ]);
     return { frame, goods };
   }, []);
   return (
@@ -252,7 +448,10 @@ function Interior() {
       </mesh>
       {/* bureau téléachat : postes */}
       {[0, 1, 2, 3, 4, 5].map((i) => (
-        <group key={i} position={[-8 + (i % 3) * 7, 0, 9 + Math.floor(i / 3) * 4.5]}>
+        <group
+          key={i}
+          position={[-8 + (i % 3) * 7, 0, 9 + Math.floor(i / 3) * 4.5]}
+        >
           <Box s={[2.4, 0.08, 1.2]} p={[0, 0.75, 0]} c="#f8f5f0" />
           <Box s={[0.9, 0.55, 0.05]} p={[0, 1.1, -0.3]} c="#2a2d36" />
           <Box s={[0.6, 0.9, 0.6]} p={[0, 0.45, 0.9]} c="#3a3f4b" />
@@ -268,9 +467,21 @@ function Doors() {
     <group>
       {[34, 45, 56].map((x) => (
         <group key={x} position={[x, 0, 12]}>
-          <Box s={[4.4, 5, 0.3]} p={[0, 2.5, 0]} c="#9aa3ad" metalness={0.4} roughness={0.5} />
+          <Box
+            s={[4.4, 5, 0.3]}
+            p={[0, 2.5, 0]}
+            c="#9aa3ad"
+            metalness={0.4}
+            roughness={0.5}
+          />
           {[0.6, 1.4, 2.2, 3, 3.8, 4.6].map((y) => (
-            <Box key={y} s={[4.4, 0.05, 0.34]} p={[0, y, 0]} c="#7d868f" cast={false} />
+            <Box
+              key={y}
+              s={[4.4, 0.05, 0.34]}
+              p={[0, y, 0]}
+              c="#7d868f"
+              cast={false}
+            />
           ))}
           <Box s={[5.2, 0.5, 0.6]} p={[0, 5.3, 0]} c="#ce0013" />
           <Box s={[4.6, 1.2, 3]} p={[0, 0.6, 1.6]} c="#8d857c" />
@@ -280,16 +491,38 @@ function Doors() {
   );
 }
 
-export function Truck({ v, spot, selected, onSelect }: { v: DepotVehicle; spot: [number, number, number]; selected: boolean; onSelect?: (e: ThreeEvent<MouseEvent>) => void }) {
+export function Truck({
+  v,
+  spot,
+  selected,
+  onSelect,
+}: {
+  v: DepotVehicle;
+  spot: [number, number, number];
+  selected: boolean;
+  onSelect?: (e: ThreeEvent<MouseEvent>) => void;
+}) {
   const small = /vl|utilitaire|fourgon/i.test(v.kind + v.name);
-  const L = small ? 3.4 : 6.2, cabL = small ? 1.2 : 1.6, H = small ? 1.7 : 2.4;
+  const L = small ? 3.4 : 6.2,
+    cabL = small ? 1.2 : 1.6,
+    H = small ? 1.7 : 2.4;
   const col = STATE_COLOR[v.state];
   const halo = useRef<THREE.Mesh>(null);
   useFrame(({ clock }) => {
-    if (halo.current) (halo.current.material as THREE.MeshBasicMaterial).opacity = selected ? 0.5 : v.state === "bad" ? 0.22 + Math.sin(clock.elapsedTime * 3) * 0.12 : 0.2;
+    if (halo.current)
+      (halo.current.material as THREE.MeshBasicMaterial).opacity = selected
+        ? 0.5
+        : v.state === "bad"
+          ? 0.22 + Math.sin(clock.elapsedTime * 3) * 0.12
+          : 0.2;
   });
   return (
-    <group position={[spot[0], 0, spot[1]]} rotation={[0, spot[2], 0]} scale={1.45} onClick={onSelect}>
+    <group
+      position={[spot[0], 0, spot[1]]}
+      rotation={[0, spot[2], 0]}
+      scale={1.45}
+      onClick={onSelect}
+    >
       <mesh position={[-cabL / 2, H / 2 + 0.45, 0]} castShadow>
         <boxGeometry args={[L - cabL, H, 1.9]} />
         <Mat c="#f6f4f1" />
@@ -306,19 +539,37 @@ export function Truck({ v, spot, selected, onSelect }: { v: DepotVehicle; spot: 
         <boxGeometry args={[L - cabL + 0.02, 0.28, 1.92]} />
         <Mat c={col} />
       </mesh>
-      <mesh position={[-cabL / 2 + (L - cabL) / 2 - 0.6, H * 0.45 + 0.45, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[-cabL / 2 + (L - cabL) / 2 - 0.6, H * 0.45 + 0.45, 0]}
+        rotation={[Math.PI / 2, 0, 0]}
+      >
         <cylinderGeometry args={[0.42, 0.42, 1.94, 24]} />
         <Mat c="#ce0013" />
       </mesh>
-      {[[L / 2 - 0.7, 0.95], [L / 2 - 0.7, -0.95], [-L / 2 + 0.9, 0.95], [-L / 2 + 0.9, -0.95]].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0.42, z]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      {[
+        [L / 2 - 0.7, 0.95],
+        [L / 2 - 0.7, -0.95],
+        [-L / 2 + 0.9, 0.95],
+        [-L / 2 + 0.9, -0.95],
+      ].map(([x, z], i) => (
+        <mesh
+          key={i}
+          position={[x, 0.42, z]}
+          rotation={[Math.PI / 2, 0, 0]}
+          castShadow
+        >
           <cylinderGeometry args={[0.42, 0.42, 0.3, 14]} />
           <Mat c="#26221f" />
         </mesh>
       ))}
       <mesh ref={halo} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.05, 0]}>
         <circleGeometry args={[L * 0.62, 32]} />
-        <meshBasicMaterial color={col} transparent opacity={0.2} depthWrite={false} />
+        <meshBasicMaterial
+          color={col}
+          transparent
+          opacity={0.2}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );
@@ -331,7 +582,9 @@ function Forklift({ path }: { path: [number, number, number, number] }) {
     const [x0, z0, x1, z1] = path;
     const t = (Math.sin(clock.elapsedTime * 0.25) + 1) / 2;
     g.current.position.set(x0 + (x1 - x0) * t, 0, z0 + (z1 - z0) * t);
-    g.current.rotation.y = Math.atan2(-(z1 - z0), x1 - x0) + (Math.cos(clock.elapsedTime * 0.25) > 0 ? 0 : Math.PI);
+    g.current.rotation.y =
+      Math.atan2(-(z1 - z0), x1 - x0) +
+      (Math.cos(clock.elapsedTime * 0.25) > 0 ? 0 : Math.PI);
   });
   return (
     <group ref={g} scale={1.3}>
@@ -342,34 +595,204 @@ function Forklift({ path }: { path: [number, number, number, number] }) {
   );
 }
 
-function Pin({ id, info, onClick, active }: { id: ZoneId; info: DepotSummary["zones"][ZoneId]; onClick: () => void; active: boolean }) {
-  const z = zoneOf(id);
+/* Où se tiennent les gens dans chaque zone (allées, devant les postes…) */
+const STAND: Partial<Record<ZoneId, [number, number, number, number]>> = {
+  soft: [30, -2.2, 56, -0.5],
+  vins: [60, -2.2, 98, -0.5],
+  sirop: [59, 9.8, 82, 11],
+  alcool: [85, 10, 98, 11],
+  quais: [30, 14.5, 60, 16],
+  parking: [64, 17, 100, 18.5],
+  bureau: [-10, 11, 12, 15.5],
+  depose: [9, 1.5, 26, 4.5],
+  futs: [-13, -2, 5, 2],
+  patio: [9, -11, 26, -9],
+  verres: [-90, 8, -20, 11],
+  vide: [-170, 22, -105, 26],
+};
+export function standingSpots(staff: DepotStaff[]) {
+  const out = new Map<string, [number, number, number]>();
+  const byZone = new Map<ZoneId, DepotStaff[]>();
+  staff
+    .filter((s) => s.present)
+    .forEach((s) => byZone.set(s.zone, [...(byZone.get(s.zone) || []), s]));
+  byZone.forEach((list, zid) => {
+    const z = zoneOf(zid);
+    const [x0, z0, x1, z1] = STAND[zid] || [
+      z.x + 2,
+      z.z + z.d - 4,
+      z.x + z.w - 2,
+      z.z + z.d - 2,
+    ];
+    list.forEach((s, i) => {
+      const t = list.length === 1 ? 0.5 : i / (list.length - 1);
+      const jitter = ((s.id.charCodeAt(0) + s.id.charCodeAt(1)) % 7) / 7;
+      out.set(s.id, [
+        x0 + (x1 - x0) * t,
+        z0 + (z1 - z0) * jitter,
+        (jitter - 0.5) * 2.4,
+      ]);
+    });
+  });
+  return out;
+}
+
+/* Un collaborateur : silhouette aux couleurs de son avatar et de son équipe */
+function Person({
+  s,
+  at,
+  selected,
+  onSelect,
+}: {
+  s: DepotStaff;
+  at: [number, number, number];
+  selected: boolean;
+  onSelect?: (e: ThreeEvent<MouseEvent>) => void;
+}) {
+  const g = useRef<THREE.Group>(null);
+  const a = avatarOf({ name: s.name, avatar: s.avatar });
+  const skin = SKINS[a.skin] || SKINS[0],
+    hair = HAIR_COLORS[a.hairColor] || HAIR_COLORS[0],
+    shirt = TEAM_SHIRT[s.team];
+  const phase = (s.id.charCodeAt(2) % 10) / 10;
+  useFrame(({ clock }) => {
+    if (!g.current) return;
+    const t = clock.elapsedTime + phase * 6;
+    g.current.rotation.y = at[2] + Math.sin(t * 0.4) * 0.6;
+    g.current.position.y = Math.abs(Math.sin(t * 1.6)) * 0.04;
+  });
   return (
-    <Html position={[z.x + z.w / 2, z.pinY, z.z + z.d / 2]} center zIndexRange={[15, 0]}>
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onPointerUp={(e) => e.stopPropagation()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
+    <group position={[at[0], 0, at[1]]} onClick={onSelect}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
+        <circleGeometry args={[selected ? 1.2 : 0.85, 24]} />
+        <meshBasicMaterial
+          color={selected ? "#ce0013" : shirt}
+          transparent
+          opacity={selected ? 0.55 : 0.28}
+          depthWrite={false}
+        />
+      </mesh>
+      <group ref={g} scale={1.15}>
+        <mesh position={[-0.13, 0.42, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.84, 0.24]} />
+          <Mat c="#2d3340" />
+        </mesh>
+        <mesh position={[0.13, 0.42, 0]} castShadow>
+          <boxGeometry args={[0.2, 0.84, 0.24]} />
+          <Mat c="#2d3340" />
+        </mesh>
+        <mesh position={[0, 1.12, 0]} castShadow>
+          <capsuleGeometry args={[0.27, 0.45, 4, 12]} />
+          <Mat c={shirt} />
+        </mesh>
+        <mesh position={[0, 1.66, 0]} castShadow>
+          <sphereGeometry args={[0.2, 16, 12]} />
+          <Mat c={skin} />
+        </mesh>
+        {a.hair !== 3 && (
+          <mesh
+            position={[0, 1.72, -0.02]}
+            scale={[1, a.hair === 1 ? 1.15 : 0.8, 1]}
+          >
+            <sphereGeometry
+              args={[0.215, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]}
+            />
+            <Mat c={a.hair === 5 ? "#ce0013" : hair} />
+          </mesh>
+        )}
+        {/* gilet haute visibilité pour les chauffeurs et préparateurs */}
+        {(s.team === "chauf" || s.team === "prep") && (
+          <mesh position={[0, 1.15, 0]}>
+            <capsuleGeometry args={[0.285, 0.3, 4, 12]} />
+            <Mat
+              c="#d7f03c"
+              emissive="#b8d41f"
+              emissiveIntensity={0.15}
+              transparent
+              opacity={0.92}
+            />
+          </mesh>
+        )}
+      </group>
+    </group>
+  );
+}
+
+/* Étiquettes de zone : des boutons HTML posés sur le canevas, déplacés à chaque image */
+type PinRefs = React.MutableRefObject<Map<ZoneId, HTMLButtonElement>>;
+function PinProjector({ refs }: { refs: PinRefs }) {
+  const v = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera, size }) => {
+    refs.current.forEach((el, id) => {
+      const z = zoneOf(id);
+      v.set(z.x + z.w / 2, z.pinY, z.z + z.d / 2).project(camera);
+      const show = v.z < 1 && Math.abs(v.x) < 1.15 && Math.abs(v.y) < 1.15;
+      el.style.visibility = show ? "visible" : "hidden";
+      el.style.transform = `translate(${((v.x + 1) / 2) * size.width}px, ${((1 - v.y) / 2) * size.height}px) translate(-50%, -100%)`;
+    });
+  });
+  return null;
+}
+function Pin({
+  id,
+  info,
+  onClick,
+  active,
+  refs,
+}: {
+  id: ZoneId;
+  info: DepotSummary["zones"][ZoneId];
+  onClick: () => void;
+  active: boolean;
+  refs: PinRefs;
+}) {
+  return (
+    <button
+      ref={(el) => {
+        if (el) refs.current.set(id, el);
+        else refs.current.delete(id);
+      }}
+      onClick={onClick}
+      style={{ visibility: "hidden" }}
+      className={
+        "absolute top-0 left-0 z-[5] flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-ink shadow-[0_6px_18px_rgba(40,25,15,.2)] " +
+        (active ? "border-brand" : "border-line hover:border-brand/50")
+      }
+    >
+      <span
         className={
-          "flex -translate-y-1/2 items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-ink shadow-[0_6px_18px_rgba(40,25,15,.2)] transition-transform hover:-translate-y-[60%] " +
-          (active ? "border-brand" : "border-line")
+          "h-2 w-2 rounded-full " + (info.alerts ? "bg-bad" : "bg-navy")
         }
-      >
-        <span className={"h-2 w-2 rounded-full " + (info.alerts ? "bg-bad" : "bg-navy")} />
-        {ZONE_META[id].name}
-        {info.alerts > 0 && <span className="rounded-full bg-bad px-1.5 text-[10px] leading-4 text-white">{info.alerts}</span>}
-      </button>
-    </Html>
+      />
+      {ZONE_META[id].name}
+      {info.alerts > 0 && (
+        <span className="rounded-full bg-bad px-1.5 text-[10px] leading-4 text-white">
+          {info.alerts}
+        </span>
+      )}
+    </button>
   );
 }
 
 /* Caméra : glisse vers la sélection */
-function Rig({ focus, home }: { focus: { p: THREE.Vector3; dist: number } | null; home: { pos: THREE.Vector3; target: THREE.Vector3 } }) {
-  const { camera, controls } = useThree() as unknown as { camera: THREE.PerspectiveCamera; controls: OrbitControlsImpl | null };
-  const anim = useRef<{ t: number; fp: THREE.Vector3; tp: THREE.Vector3; ft: THREE.Vector3; tt: THREE.Vector3 } | null>(null);
+function Rig({
+  focus,
+  home,
+}: {
+  focus: { p: THREE.Vector3; dist: number } | null;
+  home: { pos: THREE.Vector3; target: THREE.Vector3 };
+}) {
+  const { camera, controls } = useThree() as unknown as {
+    camera: THREE.PerspectiveCamera;
+    controls: OrbitControlsImpl | null;
+  };
+  const anim = useRef<{
+    t: number;
+    fp: THREE.Vector3;
+    tp: THREE.Vector3;
+    ft: THREE.Vector3;
+    tt: THREE.Vector3;
+  } | null>(null);
   useEffect(() => {
     if (!controls) return;
     const tt = focus ? focus.p.clone() : home.target.clone();
@@ -379,7 +802,13 @@ function Rig({ focus, home }: { focus: { p: THREE.Vector3; dist: number } | null
       tp = focus.p.clone().add(dir.multiplyScalar(focus.dist));
       tp.y = Math.max(tp.y, focus.dist * 0.55);
     } else tp = home.pos.clone();
-    anim.current = { t: 0, fp: camera.position.clone(), tp, ft: controls.target.clone(), tt };
+    anim.current = {
+      t: 0,
+      fp: camera.position.clone(),
+      tp,
+      ft: controls.target.clone(),
+      tt,
+    };
   }, [focus, controls, camera, home]);
   useFrame((_, dt) => {
     const a = anim.current;
@@ -418,18 +847,38 @@ export default function DepotScene({
   }, []);
   // sur téléphone, l'écran est étroit : on recule et on centre sur les bâtiments
   const home = useMemo(
-    () => (narrow ? { pos: new THREE.Vector3(150, 210, 215), target: new THREE.Vector3(10, 0, -2) } : { pos: new THREE.Vector3(-8, 100, 148), target: new THREE.Vector3(-36, 0, 2) }),
+    () =>
+      narrow
+        ? {
+            pos: new THREE.Vector3(150, 210, 215),
+            target: new THREE.Vector3(10, 0, -2),
+          }
+        : {
+            pos: new THREE.Vector3(-8, 100, 148),
+            target: new THREE.Vector3(-36, 0, 2),
+          },
     [narrow],
   );
-  const placed = summary.vehicles.slice(0, SPOTS.length).map((v, i) => ({ v, spot: SPOTS[i] }));
+  const placed = summary.vehicles
+    .slice(0, SPOTS.length)
+    .map((v, i) => ({ v, spot: SPOTS[i] }));
+  const pinRefs = useRef(new Map<ZoneId, HTMLButtonElement>());
+  const staff = useMemo(() => summary.staff || [], [summary.staff]);
+  const spots = useMemo(() => standingSpots(staff), [staff]);
   const focus = useMemo(() => {
     if (!selection) return null;
     if (selection.type === "zone") {
       const z = zoneOf(selection.id);
       return { p: center(selection.id), dist: Math.max(z.w, z.d) * 1.25 + 22 };
     }
+    if (selection.type === "staff") {
+      const at = spots.get(selection.id);
+      return at ? { p: new THREE.Vector3(at[0], 0, at[1]), dist: 16 } : null;
+    }
     const p = placed.find((x) => x.v.id === selection.id);
-    return p ? { p: new THREE.Vector3(p.spot[0], 0, p.spot[1]), dist: 28 } : null;
+    return p
+      ? { p: new THREE.Vector3(p.spot[0], 0, p.spot[1]), dist: 28 }
+      : null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selection]);
   const click = (s: Selection) => (e: ThreeEvent<MouseEvent>) => {
@@ -437,75 +886,205 @@ export default function DepotScene({
     if (e.delta > 6) return;
     onSelect(s);
   };
-  const pinned = ZONES.filter((z) => !narrow || summary.zones[z.id]?.alerts > 0 || (selection?.type === "zone" && selection.id === z.id));
+  const pinned = ZONES.filter(
+    (z) =>
+      !narrow ||
+      summary.zones[z.id]?.alerts > 0 ||
+      (selection?.type === "zone" && selection.id === z.id),
+  );
   return (
-    <Canvas shadows dpr={[1, 1.75]} camera={{ position: [80, 260, 330], fov: 36, near: 1, far: 1200 }} gl={{ antialias: true, alpha: true }} onPointerMissed={() => onSelect(null)}>
-      <hemisphereLight args={["#fff4e8", "#6b5a4c", dark ? 0.5 : 0.8]} />
-      <directionalLight position={[60, 140, 70]} intensity={dark ? 0.9 : 1.25} castShadow shadow-mapSize={[2048, 2048]} shadow-bias={-0.0005}>
-        <orthographicCamera attach="shadow-camera" args={[-200, 200, 90, -90, 1, 500]} />
-      </directionalLight>
-      {/* sol, cour et route */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-40, -0.03, 5]} receiveShadow>
-        <planeGeometry args={[420, 200]} />
-        <Mat c={dark ? "#2a2523" : "#e7e1d8"} />
-      </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-40, 0, 8]} receiveShadow>
-        <planeGeometry args={[290, 72]} />
-        <Mat c={dark ? "#211e1c" : "#b9b1a7"} />
-      </mesh>
-      <Box s={[420, 0.05, 8]} p={[-40, 0.02, ROAD_Z]} c="#5e5853" cast={false} />
-      {Array.from({ length: 40 }, (_, i) => (
-        <Box key={i} s={[4, 0.06, 0.25]} p={[-245 + i * 10.5, 0.05, ROAD_Z]} c="#f2eee9" cast={false} />
-      ))}
-      {/* haie et arbres (bois au nord-ouest, comme sur la vue aérienne) */}
-      {[[-170, -28], [-160, -30], [-148, -27], [-136, -30], [-124, -28], [-112, -30], [-176, -18], [-120, 50], [-60, 50], [10, 50], [70, 50], [112, 30], [110, -10]].map(([x, z], i) => (
-        <group key={i} position={[x, 0, z]}>
-          <Box s={[0.7, 2.6, 0.7]} p={[0, 1.3, 0]} c="#6b5040" />
-          <mesh position={[0, 5.5, 0]} castShadow>
-            <icosahedronGeometry args={[3.6 + (i % 3) * 0.8, 0]} />
-            <Mat c="#6f8f57" flatShading />
-          </mesh>
-        </group>
-      ))}
+    <div className="relative h-full w-full overflow-hidden">
+      <Canvas
+        resize={{ scroll: false, debounce: { scroll: 0, resize: 0 } }}
+        shadows
+        dpr={[1, 1.75]}
+        camera={{ position: [80, 260, 330], fov: 36, near: 1, far: 1200 }}
+        gl={{ antialias: true, alpha: true }}
+        onPointerMissed={() => onSelect(null)}
+      >
+        <hemisphereLight args={["#fff4e8", "#6b5a4c", dark ? 0.5 : 0.8]} />
+        <directionalLight
+          position={[60, 140, 70]}
+          intensity={dark ? 0.9 : 1.25}
+          castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-bias={-0.0005}
+        >
+          <orthographicCamera
+            attach="shadow-camera"
+            args={[-200, 200, 90, -90, 1, 500]}
+          />
+        </directionalLight>
+        {/* sol, cour et route */}
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[-40, -0.03, 5]}
+          receiveShadow
+        >
+          <planeGeometry args={[420, 200]} />
+          <Mat c={dark ? "#2a2523" : "#e7e1d8"} />
+        </mesh>
+        <mesh
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[-40, 0, 8]}
+          receiveShadow
+        >
+          <planeGeometry args={[290, 72]} />
+          <Mat c={dark ? "#211e1c" : "#b9b1a7"} />
+        </mesh>
+        <Box
+          s={[420, 0.05, 8]}
+          p={[-40, 0.02, ROAD_Z]}
+          c="#5e5853"
+          cast={false}
+        />
+        {Array.from({ length: 40 }, (_, i) => (
+          <Box
+            key={i}
+            s={[4, 0.06, 0.25]}
+            p={[-245 + i * 10.5, 0.05, ROAD_Z]}
+            c="#f2eee9"
+            cast={false}
+          />
+        ))}
+        {/* haie et arbres (bois au nord-ouest, comme sur la vue aérienne) */}
+        {[
+          [-170, -28],
+          [-160, -30],
+          [-148, -27],
+          [-136, -30],
+          [-124, -28],
+          [-112, -30],
+          [-176, -18],
+          [-120, 50],
+          [-60, 50],
+          [10, 50],
+          [70, 50],
+          [112, 30],
+          [110, -10],
+        ].map(([x, z], i) => (
+          <group key={i} position={[x, 0, z]}>
+            <Box s={[0.7, 2.6, 0.7]} p={[0, 1.3, 0]} c="#6b5040" />
+            <mesh position={[0, 5.5, 0]} castShadow>
+              <icosahedronGeometry args={[3.6 + (i % 3) * 0.8, 0]} />
+              <Mat c="#6f8f57" flatShading />
+            </mesh>
+          </group>
+        ))}
 
-      {/* bâtiments : clair (soft, vins, sirop, alcool) et sombres */}
-      <Shell x={28} z={-35} w={72} d={47} h={8.5} roof="#cfc8bf" wall="#efe9e1" front={2.4} />
-      <Box s={[0.15, 0.05, 36]} p={[58, 0.14, -17]} c="#2f9e5b" cast={false} />
-      <Shell x={-95} z={-22} w={80} d={36} h={9} roof="#2d2f36" />
-      <Shell x={-15} z={-26} w={22} d={30} h={9} roof="#2d2f36" />
-      <Shell x={7} z={-8} w={21} d={14} h={8} roof="#2d2f36" />
-      <Shell x={-12} z={6} w={26} d={11} h={4.5} roof="#2d2f36" wall="#f1ebe3" front={1.2} />
+        {/* bâtiments : clair (soft, vins, sirop, alcool) et sombres */}
+        <Shell
+          x={28}
+          z={-35}
+          w={72}
+          d={47}
+          h={8.5}
+          roof="#cfc8bf"
+          wall="#efe9e1"
+          front={2.4}
+        />
+        <Box
+          s={[0.15, 0.05, 36]}
+          p={[58, 0.14, -17]}
+          c="#2f9e5b"
+          cast={false}
+        />
+        <Shell x={-95} z={-22} w={80} d={36} h={9} roof="#2d2f36" />
+        <Shell x={-15} z={-26} w={22} d={30} h={9} roof="#2d2f36" />
+        <Shell x={7} z={-8} w={21} d={14} h={8} roof="#2d2f36" />
+        <Shell
+          x={-12}
+          z={6}
+          w={26}
+          d={11}
+          h={4.5}
+          roof="#2d2f36"
+          wall="#f1ebe3"
+          front={1.2}
+        />
 
-      {ZONES.map((z) => {
-        const info = summary.zones[z.id];
-        const on = selection?.type === "zone" && selection.id === z.id;
-        return (
-          <mesh key={z.id} position={[z.x + z.w / 2, 0.06, z.z + z.d / 2]} receiveShadow onClick={interactive ? click({ type: "zone", id: z.id }) : undefined}>
-            <boxGeometry args={[z.w, 0.12, z.d]} />
-            <Mat c={z.color} emissive={on ? "#ce0013" : info?.alerts ? "#d6333a" : "#000000"} emissiveIntensity={on ? 0.28 : info?.alerts ? 0.12 : 0} />
-          </mesh>
-        );
-      })}
-      {/* marquage au sol des quais */}
-      {[29, 39.5, 50.5, 61].map((x) => (
-        <Box key={x} s={[0.25, 0.04, 9]} p={[x, 0.14, 16.5]} c="#e9c22b" cast={false} />
-      ))}
-      <Doors />
-      <Interior />
-      <Forklift path={[30, -1, 56, -1]} />
-      <Forklift path={[-85, 10, -30, 10]} />
-      {placed.map(({ v, spot }) => (
-        <Truck key={v.id} v={v} spot={spot} selected={selection?.type === "vehicle" && selection.id === v.id} onSelect={click({ type: "vehicle", id: v.id })} />
-      ))}
-      {/* le tout premier repère HTML de drei ne s'affiche pas toujours : on lui donne un repère vide */}
-      {interactive && (
-        <Html position={[0, -50, 0]}>
-          <span />
-        </Html>
-      )}
-      {interactive && pinned.map((z) => <Pin key={z.id} id={z.id} info={summary.zones[z.id]} active={selection?.type === "zone" && selection.id === z.id} onClick={() => onSelect({ type: "zone", id: z.id })} />)}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.08} maxPolarAngle={Math.PI * 0.45} minDistance={18} maxDistance={420} enablePan={interactive} enableZoom={interactive} autoRotate={autoRotate} autoRotateSpeed={0.4} target={[-30, 0, 0]} />
-      <Rig focus={focus} home={home} />
-    </Canvas>
+        {ZONES.map((z) => {
+          const info = summary.zones[z.id];
+          const on = selection?.type === "zone" && selection.id === z.id;
+          return (
+            <mesh
+              key={z.id}
+              position={[z.x + z.w / 2, 0.06, z.z + z.d / 2]}
+              receiveShadow
+              onClick={
+                interactive ? click({ type: "zone", id: z.id }) : undefined
+              }
+            >
+              <boxGeometry args={[z.w, 0.12, z.d]} />
+              <Mat
+                c={z.color}
+                emissive={on ? "#ce0013" : info?.alerts ? "#d6333a" : "#000000"}
+                emissiveIntensity={on ? 0.28 : info?.alerts ? 0.12 : 0}
+              />
+            </mesh>
+          );
+        })}
+        {/* marquage au sol des quais */}
+        {[29, 39.5, 50.5, 61].map((x) => (
+          <Box
+            key={x}
+            s={[0.25, 0.04, 9]}
+            p={[x, 0.14, 16.5]}
+            c="#e9c22b"
+            cast={false}
+          />
+        ))}
+        <Doors />
+        <Interior />
+        <Forklift path={[30, -1, 56, -1]} />
+        <Forklift path={[-85, 10, -30, 10]} />
+        {staff
+          .filter((s) => s.present && spots.has(s.id))
+          .map((s) => (
+            <Person
+              key={s.id}
+              s={s}
+              at={spots.get(s.id)!}
+              selected={selection?.type === "staff" && selection.id === s.id}
+              onSelect={click({ type: "staff", id: s.id })}
+            />
+          ))}
+        {placed.map(({ v, spot }) => (
+          <Truck
+            key={v.id}
+            v={v}
+            spot={spot}
+            selected={selection?.type === "vehicle" && selection.id === v.id}
+            onSelect={click({ type: "vehicle", id: v.id })}
+          />
+        ))}
+        {interactive && <PinProjector refs={pinRefs} />}
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          maxPolarAngle={Math.PI * 0.45}
+          minDistance={18}
+          maxDistance={420}
+          enablePan={interactive}
+          enableZoom={interactive}
+          autoRotate={autoRotate}
+          autoRotateSpeed={0.4}
+          target={[-30, 0, 0]}
+        />
+        <Rig focus={focus} home={home} />
+      </Canvas>
+      {interactive &&
+        pinned.map((z) => (
+          <Pin
+            key={z.id}
+            refs={pinRefs}
+            id={z.id}
+            info={summary.zones[z.id]}
+            active={selection?.type === "zone" && selection.id === z.id}
+            onClick={() => onSelect({ type: "zone", id: z.id })}
+          />
+        ))}
+    </div>
   );
 }

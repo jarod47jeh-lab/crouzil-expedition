@@ -9,6 +9,9 @@ import { cn } from "@/lib/utils";
 import { ZONE_META } from "./overview";
 import type { Selection } from "./scene";
 import type { DepotSummary } from "./summary";
+import { AvatarFace } from "@/components/ui/avatar";
+import { avatarOf, TEAM_SHIRT } from "@/lib/domain/avatar";
+import { TEAMS } from "@/lib/domain/constants";
 
 const Scene = dynamic(() => import("./scene"), {
   ssr: false,
@@ -63,10 +66,44 @@ export function SelectionPanel({ s, sel, onClose, className }: { s: DepotSummary
       </Panel>
     );
   }
+  if (sel.type === "staff") {
+    const p = s.staff?.find((x) => x.id === sel.id);
+    if (!p) return null;
+    return (
+      <Panel className={className} onClose={onClose} kick={TEAMS[p.team]} title={p.name} sub={`Affecté à : ${ZONE_META[p.zone].name}`}>
+        <div className="flex items-center gap-3 rounded-xl border border-line p-2.5">
+          <AvatarFace style={avatarOf(p)} shirt={TEAM_SHIRT[p.team]} size={52} />
+          <div className="text-sm">
+            <Badge tone={p.present ? "ok" : "warn"}>{p.status}</Badge>
+            <p className="mt-1 text-xs text-muted">Aujourd&apos;hui</p>
+          </div>
+        </div>
+        <Link href={`/equipe/${p.id}`} className="flex h-10 items-center justify-center gap-1.5 rounded-xl bg-brand text-sm font-semibold text-brand-ink">
+          Ouvrir la fiche <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Panel>
+    );
+  }
   const z = s.zones[sel.id], m = ZONE_META[sel.id];
+  const people = (s.staff || []).filter((p) => p.zone === sel.id);
   const lines = sel.id === "parking" ? s.vehicles.map((v) => ({ text: `${v.name}${v.plate ? " · " + v.plate : ""}`, sub: v.note, tone: v.state })) : z.lines;
   return (
     <Panel className={className} onClose={onClose} kick={m.kick} title={m.name} sub={z.stat}>
+      {people.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-[11px] font-bold tracking-wide text-muted uppercase">
+            Personnel · {people.filter((p) => p.present).length}/{people.length} présent(s)
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {people.map((p) => (
+              <Link key={p.id} href={`/equipe/${p.id}`} title={`${p.name} · ${p.status}`} className="flex items-center gap-1.5 rounded-full border border-line py-0.5 pr-2.5 pl-0.5 text-xs font-medium hover:border-brand/40">
+                <AvatarFace style={avatarOf(p)} shirt={TEAM_SHIRT[p.team]} size={24} dim={!p.present} />
+                <span className={p.present ? "" : "text-muted line-through"}>{p.name.split(" ")[0]}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
       {lines.length ? (
         <ul className="grid max-h-56 gap-1.5 overflow-y-auto">
           {lines.map((l, i) => (

@@ -1,6 +1,7 @@
 "use client";
+import { Avatar } from "@/components/ui/avatar";
 import { CanWrite } from "@/components/app/perms-context";
-import { Plus, UserRound, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,9 +59,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
             sort: (r) => r.name,
             cell: (r) => (
               <Link href={`/equipe/${r.id}`} className="flex items-center gap-3 font-semibold hover:text-brand">
-                <span className="grid h-8 w-8 place-items-center rounded-xl bg-surface-2 text-xs font-bold text-muted">
-                  <UserRound className="h-4 w-4" />
-                </span>
+                <Avatar e={r} size={34} />
                 {r.name}
               </Link>
             ),

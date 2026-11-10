@@ -32,6 +32,9 @@ export interface Employee extends Row {
   size_bottom: string | null;
   size_shoe: string | null;
   size_gloves: string | null;
+  /** Zone du dépôt où il travaille (voir ZONE_IDS) */
+  zone: string | null;
+  avatar: { skin: number; hair: number; hairColor: number; glasses?: boolean; beard?: boolean } | null;
 }
 
 export type SizeKind = "top" | "bottom" | "shoe" | "gloves";
@@ -210,6 +213,8 @@ export interface DeliveryNote extends Row {
   body: string;
   status: "todo" | "ack" | "done";
   handled_at: string | null;
+  handled_by: string | null;
+  closure_note: string | null;
   created_by: string | null;
 }
 

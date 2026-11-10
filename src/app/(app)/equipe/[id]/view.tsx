@@ -1,8 +1,10 @@
 "use client";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
-import { ArrowLeft, CalendarPlus, Mail, PackageX, Pencil, Phone } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowLeft, CalendarPlus, Mail, PackageX, Pencil, Phone, Smile } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { AvatarPicker } from "@/components/app/avatar-picker";
 import { Bars } from "@/components/charts/charts";
 import { HistoryCardClient } from "@/components/app/history-client";
 import { Badge, ColorBadge } from "@/components/ui/badge";
@@ -29,6 +31,7 @@ export function EmployeeDetail({
 }) {
   const ed = useEditor<Employee>();
   const leave = useEditor<LeaveRequest>();
+  const [picker, setPicker] = useState(false);
   const perms = usePerms();
 
   const monthly = useMemo(() => {
@@ -57,9 +60,14 @@ export function EmployeeDetail({
             {!emp.active && <Badge>Sorti de l&apos;équipe</Badge>}
           </span>
         }
-        icon={<span className="font-display text-xl font-bold">{emp.name.charAt(0)}</span>}
+        icon={<Avatar e={emp} size={48} />}
         actions={
           <>
+            <CanWrite module="equipe">
+              <Button variant="outline" onClick={() => setPicker(true)}>
+                <Smile className="h-4 w-4" /> Avatar
+              </Button>
+            </CanWrite>
             {emp.phone && (
               <a href={`tel:${emp.phone}`}>
                 <Button variant="outline"><Phone className="h-4 w-4" /> Appeler</Button>
@@ -189,6 +197,7 @@ export function EmployeeDetail({
       </div>
       <EntityForm open={ed.open} onClose={ed.close} title={`Modifier ${emp.name}`} table="employees" id={emp.id} initial={employeeInitial(emp)} fields={EMPLOYEE_FIELDS} />
       <LeaveForm open={leave.open} onClose={leave.close} row={leave.row} employees={[emp]} requests={requests} defaultEmployee={emp.id} />
+      <AvatarPicker emp={emp} open={picker} onClose={() => setPicker(false)} />
     </>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import { Avatar } from "@/components/ui/avatar";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { motion } from "motion/react";
@@ -14,7 +15,7 @@ import { EntityForm, useEditor } from "@/components/ui/entity-form";
 import { CountUp } from "@/components/ui/kpi";
 import { DepotTiles } from "@/components/depot/overview";
 import { DepotHero } from "@/components/depot/hero";
-import { buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
+import { buildStaff, buildVehicles, noteLine, type DepotSummary } from "@/components/depot/summary";
 import { minimalSummary } from "@/components/depot/summary-empty";
 import { restoreRow, trashRows } from "@/lib/actions/crud";
 import { ANNOUNCEMENT_KINDS, LEAVE_LABEL, REPAIR_OPEN, TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
@@ -102,7 +103,7 @@ export function HomeView(p: Props) {
     const recup = p.notes.filter((n) => (n.kind === "recuperation" || n.kind === "les_deux") && n.status !== "done");
     const prep = teams.find((x) => x.key === "prep"), cmd = teams.find((x) => x.key === "commande");
     const out = (x?: (typeof teams)[number]) => (x?.out || []).map((e) => ({ text: `${e.name} absent`, tone: "warn" as const }));
-    return minimalSummary(
+    const base = minimalSummary(
       vehicles,
       {
         quais: deliv.filter((n) => n.level === "attention" && n.status === "todo").length,
@@ -121,6 +122,7 @@ export function HomeView(p: Props) {
         alcool: { stat: "2 niveaux, 2 m maxi, en cage" },
       },
     );
+    return { ...base, staff: buildStaff(p.employees, absToday) };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.notes, vehicles, errYd.length, absToday.length]);
 
@@ -266,6 +268,15 @@ export function HomeView(p: Props) {
                   </div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
                     <motion.div className={cn("h-full rounded-full", x.present < x.total ? "bg-warn" : "bg-ok")} initial={{ width: 0 }} animate={{ width: `${(x.present / x.total) * 100}%` }} transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }} />
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {fixed
+                      .filter((e) => e.team === x.key)
+                      .map((e) => (
+                        <Link key={e.id} href={`/equipe/${e.id}`} title={`${e.name}${absent.has(e.id) ? " · absent" : ""}`}>
+                          <Avatar e={e} size={28} dim={absent.has(e.id)} />
+                        </Link>
+                      ))}
                   </div>
                   {x.out.length > 0 && <p className="mt-1 truncate text-xs text-muted">Absent(s) : {x.out.map((e) => e.name).join(", ")}</p>}
                 </div>

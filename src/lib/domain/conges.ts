@@ -59,3 +59,29 @@ export function overlaps(r: Pick<LeaveRequest, "employee_id" | "start_date" | "e
     (x) => x.id !== exceptId && !x.deleted_at && x.status !== "rejected" && x.employee_id === r.employee_id && x.start_date <= r.end_date && r.start_date <= x.end_date,
   );
 }
+
+export interface AbsencePeriod {
+  type: LeaveType;
+  from: string;
+  to: string;
+  pending: boolean;
+}
+/** Périodes d'absence d'un collaborateur à partir d'un jour (jours ouvrés regroupés), sur `horizon` jours */
+export function absencePeriods(empId: string, from: Date, reqs: LeaveRequest[], marks: DayMark[], horizon = 120): AbsencePeriod[] {
+  const r = reqs.filter((x) => x.employee_id === empId && !x.deleted_at && x.status !== "rejected");
+  const m = marks.filter((x) => x.employee_id === empId);
+  const out: AbsencePeriod[] = [];
+  let cur: AbsencePeriod | null = null;
+  for (let i = 0, d = new Date(from); i < horizon; i++, d = addDays(d, 1)) {
+    if (!isWorkDay(d)) continue;
+    const a = absencesOn(d, r, m, true)[0];
+    const k = iso(d);
+    if (a && cur && cur.type === a.type && !!a.pending === cur.pending) cur.to = k;
+    else {
+      if (cur) out.push(cur);
+      cur = a ? { type: a.type, from: k, to: k, pending: !!a.pending } : null;
+    }
+  }
+  if (cur) out.push(cur);
+  return out;
+}

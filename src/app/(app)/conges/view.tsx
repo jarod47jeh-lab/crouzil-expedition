@@ -1,4 +1,5 @@
 "use client";
+import { Avatar } from "@/components/ui/avatar";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,8 +18,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
 import { decideLeave, setDayMarks, setFreelanceCall } from "@/lib/actions/crud";
 import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAM_ORDER, TEAMS, teamMax } from "@/lib/domain/constants";
-import { absencesOn, balances, requestDays } from "@/lib/domain/conges";
-import { DAYS_SHORT, MONTHS, addDays, fmtDate, fmtLong, isHoliday, isWorkDay, iso, nextWorkDay, parse, prevWorkDay, today } from "@/lib/domain/dates";
+import { absencePeriods, absencesOn, balances, requestDays, type AbsencePeriod } from "@/lib/domain/conges";
+import { DAYS_SHORT, MONTHS, addDays, fmtDate, fmtLong, fmtShort, isHoliday, isWorkDay, iso, nextWorkDay, parse, prevWorkDay, today } from "@/lib/domain/dates";
 import type { DayMark, Employee, FreelanceCall, LeaveRequest, LeaveType, Settings, Team } from "@/lib/types";
 import { cn, nf } from "@/lib/utils";
 import { LeaveForm } from "./leave-form";
@@ -100,77 +101,153 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
       router.refresh();
     });
 
-  const groups: Team[] = [...TEAM_ORDER];
+  const [svc, setSvc] = useState<string>(() => {
+    try {
+      return localStorage.getItem("conges-service") || "all";
+    } catch {
+      return "all";
+    }
+  });
+  const choose = (v: string) => {
+    setSvc(v);
+    try {
+      localStorage.setItem("conges-service", v);
+    } catch {}
+  };
+  const stats = TEAM_ORDER.map((g) => {
+    const fixed = team.filter((e) => e.team === g && !e.freelance);
+    const nAbs = fixed.filter((e) => absOf(e.id) && !absOf(e.id)!.pending).length;
+    return { g, fixed, nAbs, max: teamMax(g, settings) };
+  }).filter((x) => x.fixed.length || team.some((e) => e.team === x.g));
+  const groups = stats.filter((x) => svc === "all" || x.g === svc);
+  const periods = useMemo(() => {
+    const m = new Map<string, AbsencePeriod[]>();
+    team.forEach((e) => m.set(e.id, absencePeriods(e.id, parse(day), leaves, marks, 150)));
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employees, day, leaves, marks]);
+  const short = (x: string) => fmtShort(x);
+  const span = (p: AbsencePeriod) => (p.from === p.to ? short(p.from) : `${short(p.from)} → ${short(p.to)}`);
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-5">
       <Card className="flex flex-wrap items-center gap-3 p-3">
         <Button variant="outline" size="icon" onClick={() => go(prevWorkDay(d))} aria-label="Jour précédent">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <input type="date" value={day} onChange={(e) => e.target.value && go(parse(e.target.value))} className="field h-9 min-h-0 w-auto" />
+        <input type="date" value={day} onChange={(e) => e.target.value && go(parse(e.target.value))} className="field h-9 min-h-0 w-auto" aria-label="Jour affiché" />
         <Button variant="outline" size="icon" onClick={() => go(nextWorkDay(d))} aria-label="Jour suivant">
           <ChevronRight className="h-4 w-4" />
         </Button>
         <p className="font-display text-lg font-bold">{fmtLong(d)}</p>
         {!isWorkDay(d) && <Badge tone="warn">{isHoliday(d) ? "Jour férié" : "Week-end"}</Badge>}
-        <Button variant="ghost" size="sm" className="ml-auto" onClick={() => go(isWorkDay(today()) ? today() : nextWorkDay(today()))}>
-          Aujourd&apos;hui
-        </Button>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            Service
+            <select value={svc} onChange={(e) => choose(e.target.value)} className="field h-9 min-h-0 w-auto pr-8 text-sm" aria-label="Choisir le service">
+              <option value="all">Tous les services</option>
+              {stats.map((x) => (
+                <option key={x.g} value={x.g}>
+                  {TEAMS[x.g]} ({x.fixed.length - x.nAbs}/{x.fixed.length})
+                </option>
+              ))}
+            </select>
+          </label>
+          <Button variant="ghost" size="sm" onClick={() => go(isWorkDay(today()) ? today() : nextWorkDay(today()))}>
+            Aujourd&apos;hui
+          </Button>
+        </div>
       </Card>
-      <div className="grid gap-6 lg:grid-cols-2">
-        {groups.map((g) => {
-          const fixed = team.filter((e) => e.team === g && !e.freelance);
+
+      {/* Tous les services d'un coup d'œil */}
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {stats.map((x) => {
+          const over = x.max != null && x.nAbs > x.max;
+          const on = svc === x.g;
+          return (
+            <button key={x.g} onClick={() => choose(on ? "all" : x.g)} aria-pressed={on} className={cn("rounded-2xl border bg-surface p-3 text-left transition-colors", on ? "border-brand ring-1 ring-brand" : "border-line hover:border-brand/40")}>
+              <p className="text-[12px] font-semibold tracking-wide text-muted uppercase">{TEAMS[x.g]}</p>
+              <p className="mt-1 flex items-baseline gap-1 font-display text-2xl font-bold">
+                {x.fixed.length - x.nAbs}
+                <span className="text-sm text-muted">/ {x.fixed.length} présents</span>
+              </p>
+              <div className="mt-1.5 flex -space-x-2">
+                {x.fixed.slice(0, 7).map((e) => (
+                  <Avatar key={e.id} e={e} size={24} dim={!!absOf(e.id) && !absOf(e.id)!.pending} className="ring-2 ring-surface" />
+                ))}
+                {x.fixed.length > 7 && <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-[10px] font-bold ring-2 ring-surface">+{x.fixed.length - 7}</span>}
+              </div>
+              {over && <p className="mt-1 text-xs font-semibold text-bad">Seuil de {x.max} absents dépassé</p>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className={cn("grid gap-5", groups.length > 1 && "xl:grid-cols-2")}>
+        {groups.map(({ g, fixed, nAbs, max }) => {
           const free = team.filter((e) => e.team === g && e.freelance);
-          const nAbs = fixed.filter((e) => absOf(e.id) && !absOf(e.id)!.pending).length;
-          const max = teamMax(g, settings);
           if (!fixed.length && !free.length) return null;
           return (
             <Card key={g}>
               <CardHeader
                 title={TEAMS[g]}
                 subtitle={`${fixed.length - nAbs} présent(s) sur ${fixed.length}`}
-                actions={max != null && nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone="ok">{nAbs} absent(s)</Badge>}
+                actions={max != null && nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone={nAbs ? "warn" : "ok"}>{nAbs} absent(s)</Badge>}
               />
               <ul className="divide-y divide-line">
                 {fixed.map((e, i) => {
                   const a = absOf(e.id);
+                  const ps = periods.get(e.id) || [];
+                  const now = a ? ps.find((p) => p.from <= day && day <= p.to) : undefined;
+                  const next = ps.filter((p) => p.from > day).slice(0, 3);
                   return (
-                    <motion.li
-                      key={e.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.02 }}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-5 py-2.5"
-                    >
-                      <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", a ? (a.pending ? "bg-warn" : "bg-bad") : "bg-ok")} />
-                      <Link href={`/equipe/${e.id}`} className="min-w-0 flex-1 truncate font-medium hover:text-brand">
-                        {e.name}
-                      </Link>
-                      {a && (a.pending ? <Badge tone="warn">En attente : {LEAVE_LABEL[a.type]}</Badge> : <ColorBadge color={LEAVE_COLOR[a.type]}>{LEAVE_LABEL[a.type]}</ColorBadge>)}
-                      {canEdit && <select
-                        disabled={busy}
-                        aria-label={`Statut de ${e.name}`}
-                        value=""
-                        onChange={(ev) => ev.target.value && setMark(e.id, ev.target.value)}
-                        className="field h-8 min-h-0 w-[118px] pr-6 text-xs"
-                      >
-                        <option value="">Modifier…</option>
-                        <option value="PRES">Présent</option>
-                        {LEAVE_TYPES.map((t) => (
-                          <option key={t.k} value={t.k}>
-                            {t.label}
-                          </option>
-                        ))}
-                        <option value="CLEAR">Annuler la saisie du jour</option>
-                      </select>}
+                    <motion.li key={e.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: Math.min(i, 12) * 0.02 }} className="grid gap-1.5 px-4 py-3 sm:px-5">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <Avatar e={e} size={36} dim={!!a && !a.pending} />
+                        <div className="min-w-0 flex-1">
+                          <Link href={`/equipe/${e.id}`} className="block truncate font-semibold hover:text-brand">{e.name}</Link>
+                          {a ? (
+                            <p className={cn("text-xs", a.pending ? "text-warn" : "text-bad")}>
+                              {a.pending ? "Demande en attente : " : ""}
+                              {LEAVE_LABEL[a.type]}
+                              {now && now.to !== day ? ` · jusqu'au ${fmtShort(now.to)} inclus` : now ? " · aujourd'hui seulement" : ""}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-ok">Présent</p>
+                          )}
+                        </div>
+                        {a && !a.pending && <ColorBadge color={LEAVE_COLOR[a.type]}>{a.type}</ColorBadge>}
+                        {canEdit && (
+                          <select disabled={busy} aria-label={`Statut de ${e.name}`} value="" onChange={(ev) => ev.target.value && setMark(e.id, ev.target.value)} className="field h-8 min-h-0 w-[118px] pr-6 text-xs">
+                            <option value="">Modifier…</option>
+                            <option value="PRES">Présent</option>
+                            {LEAVE_TYPES.map((t) => (
+                              <option key={t.k} value={t.k}>
+                                {t.label}
+                              </option>
+                            ))}
+                            <option value="CLEAR">Annuler la saisie du jour</option>
+                          </select>
+                        )}
+                      </div>
+                      {next.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1.5 pl-12 text-xs">
+                          <span className="text-muted">À venir :</span>
+                          {next.map((p) => (
+                            <span key={p.from} className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium", p.pending && "border-dashed")} style={{ borderColor: LEAVE_COLOR[p.type], color: LEAVE_COLOR[p.type] }} title={`${LEAVE_LABEL[p.type]}${p.pending ? " (en attente)" : ""}`}>
+                              {p.type} · {span(p)}
+                              {p.pending && " ?"}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </motion.li>
                   );
                 })}
                 {free.map((e) => {
                   const on = calls.some((c) => c.employee_id === e.id && c.date === day && c.triggered);
                   return (
-                    <li key={e.id} className="flex items-center gap-3 bg-surface-2/40 px-5 py-2.5">
-                      <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", on ? "bg-ok" : "bg-line")} />
+                    <li key={e.id} className="flex items-center gap-3 bg-surface-2/40 px-4 py-2.5 sm:px-5">
+                      <Avatar e={e} size={32} dim={!on} />
                       <span className="min-w-0 flex-1 truncate font-medium">
                         {e.name} <span className="text-xs text-muted">(freelance)</span>
                       </span>
@@ -185,6 +262,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
           );
         })}
       </div>
+      <p className="text-xs text-muted">« À venir » : congés, maladies, formations… déjà connus sur les 5 prochains mois. Un « ? » signale une demande pas encore validée.</p>
     </div>
   );
 }

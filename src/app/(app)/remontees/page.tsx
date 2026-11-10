@@ -12,7 +12,7 @@ export default async function NotesPage({ searchParams }: { searchParams: Promis
   const [notes, clients, members] = await Promise.all([getNotes(sb), getClients(sb), getMembers(sb)]);
   return (
     <NotesView
-      tab={sp.tab === "toutes" ? "toutes" : "avenir"}
+      tab={sp.tab === "toutes" ? "toutes" : sp.tab === "archives" ? "archives" : "avenir"}
       notes={notes}
       clients={clients.map((c) => ({ id: c.id, name: c.name, route: c.route }))}
       authors={Object.fromEntries(members.map((m) => [m.id, m.full_name || m.email]))}

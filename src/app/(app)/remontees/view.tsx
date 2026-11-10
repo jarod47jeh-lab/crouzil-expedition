@@ -1,7 +1,7 @@
 "use client";
 import { DepotBanner } from "@/components/depot/banner";
 import { minimalSummary } from "@/components/depot/summary-empty";
-import { Megaphone, Plus, Repeat, Siren, CalendarDays } from "lucide-react";
+import { Archive, Megaphone, Plus, Repeat, Siren, CalendarDays } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { usePerms } from "@/components/app/perms-context";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import { NoteForm, type ClientLite } from "./note-form";
 export function NotesView({
   tab, notes, clients, authors, me, newForClient,
 }: {
-  tab: "avenir" | "toutes"; notes: DeliveryNote[]; clients: ClientLite[]; authors: Record<string, string>; me: string; newForClient?: string;
+  tab: "avenir" | "toutes" | "archives"; notes: DeliveryNote[]; clients: ClientLite[]; authors: Record<string, string>; me: string; newForClient?: string;
 }) {
   const perms = usePerms();
   const ed = useEditor<DeliveryNote>();
@@ -49,6 +49,16 @@ export function NotesView({
     return [...g.entries()];
   }, [active]);
 
+  const archived = useMemo(() => notes.filter((n) => n.status === "done").sort((a, b) => String(b.handled_at || b.updated_at || "").localeCompare(String(a.handled_at || a.updated_at || ""))), [notes]);
+  const archiveGroups = useMemo(() => {
+    const g = new Map<string, DeliveryNote[]>();
+    archived.forEach((n) => {
+      const d = n.handled_at || n.updated_at || n.created_at;
+      const k = new Date(d).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+      g.set(k, [...(g.get(k) || []), n]);
+    });
+    return [...g.entries()];
+  }, [archived]);
   const todo = notes.filter((n) => n.status === "todo").length;
   const soon = notes.filter((n) => isActive(n) && ["late", "today", "tomorrow"].includes(bucketOf(n))).length;
   const permanent = notes.filter((n) => isActive(n) && n.permanent).length;
@@ -86,9 +96,36 @@ export function NotesView({
         tabs={[
           { key: "avenir", label: "En cours", href: "/remontees", count: active.length },
           { key: "toutes", label: "Toutes les remontées", href: "/remontees?tab=toutes" },
+          { key: "archives", label: "Archives", href: "/remontees?tab=archives", count: archived.length },
         ]}
       />
-      {tab === "avenir" ? (
+      {tab === "archives" ? (
+        archived.length ? (
+          <div className="grid gap-8">
+            {archiveGroups.map(([month, list]) => (
+              <section key={month}>
+                <h2 className="mb-3 flex items-center gap-3 text-sm font-bold text-muted capitalize">
+                  {month}
+                  <Badge tone="muted">{list.length}</Badge>
+                  <span className="h-px flex-1 bg-line" />
+                </h2>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {list.map((n, i) => (
+                    <NoteCard key={n.id} n={n} i={i} author={n.created_by ? authors[n.created_by] : undefined} closer={n.handled_by ? authors[n.handled_by] : undefined} me={me} />
+                  ))}
+                </div>
+              </section>
+            ))}
+            <p className="text-xs text-muted">Les remontées closes restent archivées. Seul un administrateur peut les supprimer.</p>
+          </div>
+        ) : (
+          <Card>
+            <Empty icon={<Archive className="h-5 w-5" />} title="Aucune remontée archivée">
+              Quand vous closez une remontée, elle arrive ici avec la date, votre nom et le mot de clôture.
+            </Empty>
+          </Card>
+        )
+      ) : tab === "avenir" ? (
         <>
           <div className="mb-4 flex items-center gap-2">
             <button
