@@ -39,9 +39,9 @@ export const ZONES: Zone[] = [
   { id: "futs", x: -15, z: -26, w: 22, d: 30, color: "#ddd5cb", pinY: 11 },
   { id: "patio", x: 7, z: -26, w: 21, d: 18, color: "#cbbfb1", pinY: 5 },
   { id: "depose", x: 7, z: -8, w: 21, d: 14, color: "#e3dacf", pinY: 9 },
-  { id: "bureau", x: -12, z: 6, w: 16, d: 11, color: "#9a958f", pinY: 6 },
-  // salle café : sol stratifié gris, dans le prolongement du bureau
-  { id: "cafe", x: 4, z: 6, w: 10, d: 11, color: "#9a958f", pinY: 6 },
+  { id: "bureau", x: -2, z: 6, w: 16, d: 11, color: "#9a958f", pinY: 6 },
+  // salle café : sol stratifié gris, côté ouest, le bureau dans son prolongement
+  { id: "cafe", x: -12, z: 6, w: 10, d: 11, color: "#9a958f", pinY: 6 },
   { id: "soft", x: 28, z: -35, w: 30, d: 47, color: "#e6ded4", pinY: 12 },
   { id: "vins", x: 58, z: -35, w: 42, d: 36, color: "#e6ded4", pinY: 12 },
   { id: "sirop", x: 58, z: 1, w: 26, d: 11, color: "#ece4da", pinY: 6 },
@@ -448,8 +448,14 @@ function Interior() {
         <boxGeometry args={[15, 2.8, 10, 15, 3, 10]} />
         <meshBasicMaterial color="#7d8794" wireframe />
       </mesh>
-      <Office />
-      <CafeRoom />
+      {/* bureau à l'est, salle café à l'ouest : le bureau est dessiné pour x -12..4 et décalé de 10 m,
+          la salle café dessinée pour x 4..14 est retournée en miroir (x' = 2 - x), cloison à x = -2 */}
+      <group position={[10, 0, 0]}>
+        <Office />
+      </group>
+      <group position={[2, 0, 0]} scale={[-1, 1, 1]}>
+        <CafeRoom />
+      </group>
     </group>
   );
 }
@@ -723,8 +729,8 @@ const STAND: Partial<Record<ZoneId, [number, number, number, number]>> = {
   alcool: [85, 10, 98, 11],
   quais: [30, 14.5, 60, 16],
   parking: [64, 17, 100, 18.5],
-  bureau: [-9, 13.4, 1.5, 15.6],
-  cafe: [6, 12.6, 11.5, 15],
+  bureau: [1, 13.4, 11.5, 15.6],
+  cafe: [-9.5, 12.6, -4, 15],
   depose: [9, 1.5, 26, 4.5],
   futs: [-13, -2, 5, 2],
   patio: [9, -11, 26, -9],
@@ -935,13 +941,13 @@ const inRect = (r: Rect, x: number, z: number) => x >= r[0] && x <= r[2] && z >=
 const RACKS: Rect[] = [
   ...[31.5, 37.5, 43.5, 49.5, 61, 67, 73, 79, 85, 91].map((x): Rect => [x - 0.55, -33.2, x + 1.75, -3.1]),
   // bureau et salle café : cloison (passage ouvert entre z 9 et 11), comptoir, grande table
-  [-5.3, 8.5, -2.7, 12.7],
-  [-8.6, 6, -6.2, 7.3],
-  [3.2, 6, 4, 9],
-  [3.9, 6, 4.1, 9],
-  [3.9, 11, 4.1, 17],
-  [2.95, 11.3, 3.65, 13.1],
-  [8, 9.45, 12.4, 10.55],
+  [4.7, 8.5, 7.3, 12.7],
+  [1.4, 6, 3.8, 7.3],
+  [13.2, 6, 14, 9],
+  [-2.1, 6, -1.9, 9],
+  [-2.1, 11, -1.9, 17],
+  [-1.65, 11.3, -0.95, 13.1],
+  [-10.4, 9.45, -6, 10.55],
 ];
 const EYE = 1.65;
 const R = 0.35; // « épaisseur » du visiteur
@@ -959,8 +965,8 @@ function entryOf(id: ZoneId): [number, number, number?] {
   // dans les halls de racks, on entre par l'allée transversale, face à une allée entre deux rangées
   if (id === "soft") return [41.1, -1.4];
   if (id === "vins") return [76.6, -1.4];
-  // salle café : on entre par le passage depuis le bureau, comme sur la photo (regard vers l'est)
-  if (id === "cafe") return [4.9, 10, -Math.PI / 2];
+  // salle café : on entre par le passage depuis le bureau, comme sur la photo (regard vers l'ouest)
+  if (id === "cafe") return [-2.9, 10, Math.PI / 2];
   return [z.x + z.w / 2, Math.min(z.z + z.d - 2.5, a[3] - 1.2)];
 }
 function blocked(x: number, z: number, area: Rect) {
