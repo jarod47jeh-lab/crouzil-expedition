@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { ArrowRight, Box, Building, Container, Droplet, GlassWater, PackageOpen, ParkingSquare, Recycle, ShieldCheck, Trees, Warehouse, Wine } from "lucide-react";
+import { ArrowRight, Box, Building, Coffee, Container, Droplet, GlassWater, PackageOpen, ParkingSquare, Recycle, ShieldCheck, Trees, Warehouse, Wine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DepotSummary, ZoneId } from "./summary";
 
@@ -17,13 +17,14 @@ export const ZONE_META: Record<ZoneId, { name: string; kick: string; icon: typeo
   patio: { name: "Patio", kick: "Entre fûts et soft", icon: Trees, href: "/remontees" },
   verres: { name: "Verres et fûts", kick: "Verres et fûts", icon: GlassWater, href: "/journal" },
   bureau: { name: "Bureau téléachat", kick: "Service Commande", icon: Building, href: "/conges" },
+  cafe: { name: "Salle café", kick: "Pause et réunions", icon: Coffee, href: "/conges" },
   vide: { name: "Vides", kick: "Retours et vides", icon: Recycle, href: "/remontees" },
 };
 const TONE = { ok: "bg-ok", warn: "bg-warn", bad: "bg-bad" };
 
 /** Résumé du dépôt en tuiles : version légère, et liste accessible sous la vue 3D */
 export function DepotTiles({ s, compact }: { s: DepotSummary; compact?: boolean }) {
-  const order: ZoneId[] = ["quais", "parking", "depose", "futs", "soft", "vins", "sirop", "alcool", "verres", "patio", "bureau", "vide"];
+  const order: ZoneId[] = ["quais", "parking", "depose", "futs", "soft", "vins", "sirop", "alcool", "verres", "patio", "bureau", "cafe", "vide"];
   return (
     <div className={cn("grid gap-2", compact ? "grid-cols-2 md:grid-cols-4" : "sm:grid-cols-2 xl:grid-cols-3")}>
       {order.map((id, i) => {

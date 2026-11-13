@@ -2,7 +2,7 @@ import type { Absence } from "@/lib/domain/conges";
 import type { Asset, DeliveryNote, Employee, Repair, Team } from "@/lib/types";
 
 /** Zones du dépôt d'Ayguesvives, d'après le plan annoté */
-export const ZONE_IDS = ["vide", "verres", "futs", "patio", "depose", "bureau", "soft", "vins", "sirop", "alcool", "quais", "parking"] as const;
+export const ZONE_IDS = ["vide", "verres", "futs", "patio", "depose", "bureau", "cafe", "soft", "vins", "sirop", "alcool", "quais", "parking"] as const;
 export type ZoneId = (typeof ZONE_IDS)[number];
 
 /** Ce que la vue du dépôt affiche, calculé à partir des données de l'appli */
