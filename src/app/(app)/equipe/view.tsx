@@ -1,7 +1,9 @@
 "use client";
 import { Avatar } from "@/components/ui/avatar";
-import { CanWrite } from "@/components/app/perms-context";
-import { Plus, Users } from "lucide-react";
+import { CanWrite, usePerms } from "@/components/app/perms-context";
+import { AvatarStudio } from "@/components/app/avatar-picker";
+import { useState } from "react";
+import { Plus, Smile, Users } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,8 @@ type Row = Employee & { bal: ReturnType<typeof balances> };
 export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
   const ed = useEditor<Row>();
   const active = rows.filter((r) => r.active);
+  const perms = usePerms();
+  const [studio, setStudio] = useState(false);
   return (
     <>
       <PageHeader
@@ -27,11 +31,18 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
         icon={<Users className="h-6 w-6" />}
         subtitle={`Collaborateurs, fonctions et soldes de congés ${year}`}
         actions={
-          <CanWrite module="equipe">
-          <Button onClick={ed.create}>
-            <Plus className="h-4 w-4" /> Nouveau collaborateur
-          </Button>
-          </CanWrite>
+          <>
+            {perms.admin && (
+              <Button variant="outline" onClick={() => setStudio(true)}>
+                <Smile className="h-4 w-4" /> Avatars
+              </Button>
+            )}
+            <CanWrite module="equipe">
+              <Button onClick={ed.create}>
+                <Plus className="h-4 w-4" /> Nouveau collaborateur
+              </Button>
+            </CanWrite>
+          </>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -92,6 +103,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
         initial={employeeInitial(ed.row)}
         fields={EMPLOYEE_FIELDS}
       />
+      {perms.admin && <AvatarStudio employees={rows} open={studio} onClose={() => setStudio(false)} />}
     </>
   );
 }

@@ -4,20 +4,33 @@ import { cn } from "@/lib/utils";
 
 /** Visage dessiné, tenue aux couleurs de l'équipe */
 export function AvatarFace({ style: a, shirt, size = 36, className, title, dim }: { style: AvatarStyle; shirt: string; size?: number; className?: string; title?: string; dim?: boolean }) {
-  const skin = SKINS[a.skin] || SKINS[0], hc = HAIR_COLORS[a.hairColor] || HAIR_COLORS[0];
+  const skin = SKINS[a.skin] || SKINS[0], hc = HAIR_COLORS[a.hairColor] ?? HAIR_COLORS[0];
+  // même dessin = même identifiant : deux avatars différents ne partagent jamais leur découpe
+  const clip = "av-" + [a.skin, a.hair, a.hairColor, a.gender, +!!a.beard, +!!a.stubble, +!!a.mustache, +!!a.glasses, shirt.slice(1)].join("-");
+  const woman = a.gender === "F";
   return (
     <svg viewBox="0 0 64 64" width={size} height={size} className={cn("shrink-0 rounded-full", dim && "opacity-45 grayscale", className)} role="img" aria-label={title}>
       {title && <title>{title}</title>}
       <circle cx="32" cy="32" r="32" fill="color-mix(in srgb, var(--surface-2) 80%, transparent)" />
-      <clipPath id="av-clip">
+      <clipPath id={clip}>
         <circle cx="32" cy="32" r="32" />
       </clipPath>
-      <g clipPath="url(#av-clip)">
+      <g clipPath={`url(#${clip})`}>
+        {/* cheveux derrière la tête */}
         {a.hair === 1 && <path d="M15 30c0-12 7-19 17-19s17 7 17 19v20H15z" fill={hc} />}
+        {a.hair === 6 && <path d="M17 30c0-11 6.5-17 15-17s15 6 15 17v12c-4 2-26 2-30 0z" fill={hc} />}
+        {a.hair === 7 && <circle cx="32" cy="26" r="17" fill={hc} />}
+        {a.hair === 8 && <path d="M40 18c8 2 9 10 6 18-1 3-3 4-4 3 2-6 2-13-2-17z" fill={hc} />}
+        {a.hair === 10 && (
+          <>
+            <path d="M16 28c0-10 7-16 16-16s16 6 16 16v24h-4V30H20v22h-4z" fill={hc} />
+            {[18, 22, 42, 46].map((x) => <path key={x} d={`M${x} 34v18`} stroke="rgb(0 0 0 / .25)" strokeWidth="1" />)}
+          </>
+        )}
         <path d="M10 64c1-13 10-20 22-20s21 7 22 20z" fill={shirt} />
         <path d="M27 44h10v5c0 3-10 3-10 0z" fill={skin} />
         <path d="M26 45l6 7 6-7" fill="none" stroke="rgb(255 255 255 / .55)" strokeWidth="2" />
-        <ellipse cx="32" cy="31" rx="12" ry="13.5" fill={skin} />
+        <ellipse cx="32" cy="31" rx={woman ? 11.5 : 12} ry="13.5" fill={skin} />
         {a.hair === 0 && <path d="M19.5 29c0-9 5.5-14 12.5-14s12.5 5 12.5 14c-3-5-7-6.5-12.5-6.5S22.5 24 19.5 29z" fill={hc} />}
         {a.hair === 1 && <path d="M19.5 30c0-10 5.5-15 12.5-15s12.5 5 12.5 15c-4-4-8-7-12.5-7s-8.5 3-12.5 7z" fill={hc} />}
         {a.hair === 2 && (
@@ -35,10 +48,27 @@ export function AvatarFace({ style: a, shirt, size = 36, className, title, dim }
             <circle cx="32" cy="16.5" r="1.4" fill="#fff" />
           </>
         )}
+        {a.hair === 6 && <path d="M19.5 31c0-10 5.5-15.5 12.5-15.5S44.5 21 44.5 31c-2-5-5-7-8-7.5-3 3-12 4-17 7.5z" fill={hc} />}
+        {a.hair === 7 && <path d="M19 30c-1-9 5-14.5 13-14.5S46 21 45 30c-3-4-7-6-13-6s-10 2-13 6z" fill={hc} />}
+        {a.hair === 8 && <path d="M19.5 29c0-9 5.5-14 12.5-14s12.5 5 12.5 14c-3-4.5-7-6-12.5-6s-9.5 1.5-12.5 6z" fill={hc} />}
+        {a.hair === 9 && (
+          <>
+            <path d="M19.6 33c-.8-4 .2-7 1.6-8.5 0 3 .3 5.5 1.2 8.5zM44.4 33c.8-4-.2-7-1.6-8.5 0 3-.3 5.5-1.2 8.5z" fill={hc} />
+            <ellipse cx="32" cy="20" rx="7" ry="3" fill="#fff" opacity=".18" />
+          </>
+        )}
+        {a.hair === 10 && <path d="M19.5 29c0-9 5.5-14 12.5-14s12.5 5 12.5 14c-3-4.5-7-6-12.5-6s-9.5 1.5-12.5 6z" fill={hc} />}
+        {a.stubble && !a.beard && <path d="M21.5 34c1.5 7.5 5.5 11 10.5 11s9-3.5 10.5-11c-2 2.5-5 3.5-10.5 3.5S23.5 36.5 21.5 34z" fill={hc} opacity=".38" />}
         {a.beard && <path d="M21 33c1 9 5.5 13 11 13s10-4 11-13c-2 3-5 4.5-11 4.5S23 36 21 33z" fill={hc} />}
         <circle cx="27" cy="31.5" r="1.6" fill="#2a211d" />
         <circle cx="37" cy="31.5" r="1.6" fill="#2a211d" />
-        <path d="M28.5 38.5c2 1.6 5 1.6 7 0" fill="none" stroke="#7a3f30" strokeWidth="1.5" strokeLinecap="round" />
+        {woman && (
+          <g stroke="#2a211d" strokeWidth=".9" strokeLinecap="round">
+            <path d="M24.6 29.6l-.9-.9M39.4 29.6l.9-.9" />
+          </g>
+        )}
+        {a.mustache && <path d="M27 36.6c2-1.6 3.6-1.2 5 0 1.4-1.2 3-1.6 5 0-1.6 1.6-3.6 1.6-5 .6-1.4 1-3.4 1-5-.6z" fill={hc} />}
+        <path d="M28.5 38.5c2 1.6 5 1.6 7 0" fill="none" stroke={woman ? "#b0473f" : "#7a3f30"} strokeWidth={woman ? 1.8 : 1.5} strokeLinecap="round" />
         {a.glasses && (
           <g fill="none" stroke="#2a211d" strokeWidth="1.4">
             <circle cx="27" cy="31.5" r="4" />

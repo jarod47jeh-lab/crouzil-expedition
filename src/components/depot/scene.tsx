@@ -10,7 +10,7 @@ import {
   type ThreeEvent,
 } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { DepotStaff, DepotSummary, DepotVehicle, ZoneId } from "./summary";
@@ -689,15 +689,40 @@ function Person({
           <sphereGeometry args={[0.2, 16, 12]} />
           <Mat c={skin} />
         </mesh>
-        {a.hair !== 3 && (
+        {a.hair !== 3 && a.hair !== 9 && (
           <mesh
             position={[0, 1.72, -0.02]}
-            scale={[1, a.hair === 1 ? 1.15 : 0.8, 1]}
+            scale={a.hair === 7 ? [1.45, 1.35, 1.45] : [1, a.hair === 1 || a.hair === 6 || a.hair === 10 ? 1.15 : 0.8, 1]}
           >
             <sphereGeometry
               args={[0.215, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]}
             />
             <Mat c={a.hair === 5 ? "#ce0013" : hair} />
+          </mesh>
+        )}
+        {/* cheveux longs, carré et tresses : dans le dos */}
+        {(a.hair === 1 || a.hair === 6 || a.hair === 10) && (
+          <mesh position={[0, a.hair === 6 ? 1.6 : 1.46, -0.1]}>
+            <boxGeometry args={[0.38, a.hair === 6 ? 0.22 : 0.5, 0.14]} />
+            <Mat c={hair} />
+          </mesh>
+        )}
+        {a.hair === 2 && (
+          <mesh position={[0, 1.9, -0.1]}>
+            <sphereGeometry args={[0.09, 12, 8]} />
+            <Mat c={hair} />
+          </mesh>
+        )}
+        {a.hair === 8 && (
+          <mesh position={[0, 1.62, -0.24]} rotation={[0.5, 0, 0]}>
+            <capsuleGeometry args={[0.05, 0.22, 4, 8]} />
+            <Mat c={hair} />
+          </mesh>
+        )}
+        {a.beard && (
+          <mesh position={[0, 1.58, 0.1]} scale={[1, 0.7, 0.6]}>
+            <sphereGeometry args={[0.17, 12, 8, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2]} />
+            <Mat c={hair} />
           </mesh>
         )}
         {/* gilet haute visibilité pour les chauffeurs et préparateurs */}
@@ -774,13 +799,244 @@ function Pin({
   );
 }
 
+/* ---------- Visite à pied : on entre dans une pièce et on s'y promène ---------- */
+type Rect = [number, number, number, number]; // x0, z0, x1, z1
+/* Bâtiments (même emprise que les coques dessinées) : à l'intérieur, on se promène dans tout le bâtiment */
+const BUILDINGS: Rect[] = [
+  [28, -35, 100, 12], // soft, vins, sirop, alcool
+  [-95, -22, -15, 14], // verres et fûts
+  [-15, -26, 7, 4], // fûts
+  [7, -8, 28, 6], // dépose commandes
+  [-12, 6, 14, 17], // bureau téléachat
+];
+const inRect = (r: Rect, x: number, z: number) => x >= r[0] && x <= r[2] && z >= r[1] && z <= r[3];
+/* Rangées de racks (double rangée dos à dos), à contourner */
+const RACKS: Rect[] = [31.5, 37.5, 43.5, 49.5, 61, 67, 73, 79, 85, 91].map((x) => [x - 0.55, -33.2, x + 1.75, -3.1]);
+const EYE = 1.65;
+const R = 0.35; // « épaisseur » du visiteur
+
+/** Zone où l'on marche : le bâtiment qui contient la pièce, sinon la zone extérieure elle-même */
+function walkArea(id: ZoneId): Rect {
+  const z = zoneOf(id);
+  const cx = z.x + z.w / 2, cz = z.z + z.d / 2;
+  return BUILDINGS.find((b) => inRect(b, cx, cz)) || [z.x, z.z, z.x + z.w, z.z + z.d];
+}
+/** Point d'entrée : devant la pièce, côté façade (sud), en regardant vers le fond */
+function entryOf(id: ZoneId): [number, number] {
+  const z = zoneOf(id);
+  const a = walkArea(id);
+  // dans les halls de racks, on entre par l'allée transversale, face à une allée entre deux rangées
+  if (id === "soft") return [41.1, -1.4];
+  if (id === "vins") return [76.6, -1.4];
+  return [z.x + z.w / 2, Math.min(z.z + z.d - 2.5, a[3] - 1.2)];
+}
+function blocked(x: number, z: number, area: Rect) {
+  if (x < area[0] + R || x > area[2] - R || z < area[1] + R || z > area[3] - R) return true;
+  return RACKS.some((r) => x > r[0] - R && x < r[2] + R && z > r[1] - R && z < r[3] + R);
+}
+export type WalkInput = { f: number; s: number; turn: number; run: boolean };
+
+function Walker({ zone, input, onZone }: { zone: ZoneId; input: React.MutableRefObject<WalkInput>; onZone: (z: ZoneId | null) => void }) {
+  const { camera, gl } = useThree() as unknown as { camera: THREE.PerspectiveCamera; gl: THREE.WebGLRenderer };
+  const st = useRef({
+    yaw: 0,
+    pitch: -0.06,
+    x: 0,
+    z: 0,
+    intro: 0,
+    fromP: new THREE.Vector3(),
+    fromQ: new THREE.Quaternion(),
+    keys: new Set<string>(),
+    last: null as ZoneId | null,
+  });
+  const area = useMemo(() => walkArea(zone), [zone]);
+  useEffect(() => {
+    const s = st.current;
+    const [x, z] = entryOf(zone);
+    Object.assign(s, { x, z, yaw: 0, pitch: -0.06, intro: 0, last: null });
+    s.fromP.copy(camera.position);
+    s.fromQ.copy(camera.quaternion);
+    const fov = camera.fov, near = camera.near;
+    camera.fov = 62;
+    camera.near = 0.1; // au plus près des racks sans les « traverser » à l'écran
+    camera.updateProjectionMatrix();
+    // regarder : glisser avec la souris ou le doigt
+    const el = gl.domElement;
+    let drag: { x: number; y: number; id: number } | null = null;
+    const down = (e: PointerEvent) => {
+      drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    };
+    const move = (e: PointerEvent) => {
+      if (!drag || drag.id !== e.pointerId) return;
+      const k = e.pointerType === "touch" ? 0.006 : 0.004;
+      s.yaw += (e.clientX - drag.x) * k;
+      s.pitch = Math.max(-1.1, Math.min(0.9, s.pitch + (e.clientY - drag.y) * k));
+      drag.x = e.clientX;
+      drag.y = e.clientY;
+    };
+    const up = (e: PointerEvent) => {
+      if (drag?.id === e.pointerId) drag = null;
+    };
+    // e.code = position physique : ZQSD sur clavier AZERTY, WASD sur QWERTY
+    const MOVE = ["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "ShiftLeft", "ShiftRight"];
+    const kd = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (MOVE.includes(e.code)) {
+        s.keys.add(e.code);
+        if (e.code.startsWith("Arrow")) e.preventDefault();
+      }
+    };
+    const ku = (e: KeyboardEvent) => s.keys.delete(e.code);
+    const blur = () => s.keys.clear();
+    el.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    window.addEventListener("keydown", kd);
+    window.addEventListener("keyup", ku);
+    window.addEventListener("blur", blur);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("keydown", kd);
+      window.removeEventListener("keyup", ku);
+      window.removeEventListener("blur", blur);
+      camera.fov = fov;
+      camera.near = near;
+      camera.updateProjectionMatrix();
+    };
+  }, [zone, camera, gl]);
+  const q = useMemo(() => new THREE.Quaternion(), []);
+  const e = useMemo(() => new THREE.Euler(0, 0, 0, "YXZ"), []);
+  const p = useMemo(() => new THREE.Vector3(), []);
+  useFrame((_, dtRaw) => {
+    const s = st.current;
+    const dt = Math.min(dtRaw, 0.05);
+    const k = s.keys, i = input.current;
+    const fwd = (k.has("KeyW") || k.has("ArrowUp") ? 1 : 0) - (k.has("KeyS") || k.has("ArrowDown") ? 1 : 0) + i.f;
+    const side = (k.has("KeyD") ? 1 : 0) - (k.has("KeyA") ? 1 : 0) + i.s;
+    const turn = (k.has("ArrowRight") ? 1 : 0) - (k.has("ArrowLeft") ? 1 : 0) + i.turn;
+    const speed = (k.has("ShiftLeft") || k.has("ShiftRight") || i.run ? 5 : 2.2) * dt;
+    s.yaw -= turn * 1.8 * dt;
+    if (s.intro >= 1 && (fwd || side)) {
+      // yaw = 0 : on regarde vers le nord (z négatif)
+      const sin = Math.sin(s.yaw), cos = Math.cos(s.yaw);
+      const dx = (-sin * fwd + cos * side) * speed, dz = (-cos * fwd - sin * side) * speed;
+      // on glisse le long des obstacles : chaque axe est testé séparément
+      if (!blocked(s.x + dx, s.z, area)) s.x += dx;
+      if (!blocked(s.x, s.z + dz, area)) s.z += dz;
+    }
+    e.set(s.pitch, s.yaw, 0, "YXZ");
+    q.setFromEuler(e);
+    p.set(s.x, EYE + (fwd || side ? Math.abs(Math.sin(performance.now() / 160)) * 0.03 : 0), s.z);
+    if (s.intro < 1) {
+      // arrivée : la caméra descend jusqu'à hauteur d'yeux
+      s.intro = Math.min(1, s.intro + Math.min(dtRaw, 0.25) / 1.1);
+      const t = 1 - Math.pow(1 - s.intro, 3);
+      camera.position.lerpVectors(s.fromP, p, t);
+      camera.quaternion.slerpQuaternions(s.fromQ, q, t);
+    } else {
+      camera.position.copy(p);
+      camera.quaternion.copy(q);
+    }
+    // pièce où l'on se trouve, pour l'affichage
+    const here = ZONES.find((z) => s.x >= z.x && s.x <= z.x + z.w && s.z >= z.z && s.z <= z.z + z.d)?.id || null;
+    if (here !== s.last) {
+      s.last = here;
+      onZone(here);
+    }
+  });
+  return null;
+}
+
+function HoldButton({ label, onHold, children, className }: { label: string; onHold: (on: boolean) => void; children: React.ReactNode; className?: string }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onPointerDown={(e) => {
+        e.currentTarget.setPointerCapture(e.pointerId);
+        onHold(true);
+      }}
+      onPointerUp={() => onHold(false)}
+      onPointerCancel={() => onHold(false)}
+      onLostPointerCapture={() => onHold(false)}
+      onContextMenu={(e) => e.preventDefault()}
+      className={
+        "grid h-12 w-12 touch-none place-items-center rounded-2xl border border-line bg-surface/90 text-ink shadow-[0_6px_18px_rgba(40,25,15,.2)] select-none active:bg-brand active:text-white " +
+        (className || "")
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+/* Commandes affichées pendant la visite */
+function WalkHud({ zone, here, input, onExit }: { zone: ZoneId; here: ZoneId | null; input: React.MutableRefObject<WalkInput>; onExit: () => void }) {
+  const [hint, setHint] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setHint(false), 6000);
+    const k = (e: KeyboardEvent) => e.key === "Escape" && onExit();
+    window.addEventListener("keydown", k);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", k);
+    };
+  }, [onExit]);
+  const hold = (key: keyof WalkInput, v: number) => (on: boolean) => {
+    (input.current[key] as number) = on ? v : 0;
+  };
+  const arrow = (r: number) => (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" style={{ transform: `rotate(${r}deg)` }} fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 19V5M5 12l7-7 7 7" />
+    </svg>
+  );
+  const turnIcon = (flip: boolean) => (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" style={{ transform: flip ? "scaleX(-1)" : undefined }} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v4h-4" />
+    </svg>
+  );
+  return (
+    <>
+      <div className="absolute top-3 left-3 z-[6] flex flex-wrap items-center gap-2">
+        <span className="rounded-full border border-line bg-surface/95 px-3 py-1.5 text-[13px] font-semibold shadow-[0_6px_18px_rgba(40,25,15,.2)]">
+          {here ? ZONE_META[here].name : `Près de : ${ZONE_META[zone].name}`}
+        </span>
+        <button type="button" onClick={onExit} className="rounded-full bg-ink px-3.5 py-1.5 text-[13px] font-semibold text-surface shadow-[0_6px_18px_rgba(40,25,15,.25)]">
+          Sortir de la visite
+        </button>
+      </div>
+      {hint && (
+        <div className="pointer-events-none absolute top-14 left-1/2 z-[6] -translate-x-1/2 rounded-full bg-ink/90 px-3.5 py-1.5 text-center text-[12.5px] text-surface">
+          <span className="hidden sm:inline">Z Q S D ou flèches pour marcher · Maj pour courir · glissez pour regarder · Échap pour sortir</span>
+          <span className="sm:hidden">Boutons pour marcher · glissez pour regarder</span>
+        </div>
+      )}
+      <div className="absolute bottom-3 left-3 z-[6] grid grid-cols-3 gap-1.5">
+        <HoldButton label="Tourner à gauche" onHold={hold("turn", -1)}>{turnIcon(true)}</HoldButton>
+        <HoldButton label="Avancer" onHold={hold("f", 1)}>{arrow(0)}</HoldButton>
+        <HoldButton label="Tourner à droite" onHold={hold("turn", 1)}>{turnIcon(false)}</HoldButton>
+        <HoldButton label="Pas de côté à gauche" onHold={hold("s", -1)}>{arrow(-90)}</HoldButton>
+        <HoldButton label="Reculer" onHold={hold("f", -1)}>{arrow(180)}</HoldButton>
+        <HoldButton label="Pas de côté à droite" onHold={hold("s", 1)}>{arrow(90)}</HoldButton>
+      </div>
+    </>
+  );
+}
+
 /* Caméra : glisse vers la sélection */
 function Rig({
   focus,
   home,
+  paused,
 }: {
   focus: { p: THREE.Vector3; dist: number } | null;
   home: { pos: THREE.Vector3; target: THREE.Vector3 };
+  paused: boolean;
 }) {
   const { camera, controls } = useThree() as unknown as {
     camera: THREE.PerspectiveCamera;
@@ -794,7 +1050,7 @@ function Rig({
     tt: THREE.Vector3;
   } | null>(null);
   useEffect(() => {
-    if (!controls) return;
+    if (!controls || paused) return;
     const tt = focus ? focus.p.clone() : home.target.clone();
     let tp: THREE.Vector3;
     if (focus) {
@@ -809,10 +1065,10 @@ function Rig({
       ft: controls.target.clone(),
       tt,
     };
-  }, [focus, controls, camera, home]);
+  }, [focus, controls, camera, home, paused]);
   useFrame((_, dt) => {
     const a = anim.current;
-    if (!a || !controls) return;
+    if (!a || !controls || paused) return;
     a.t = Math.min(1, a.t + dt / 1.2);
     const k = 1 - Math.pow(1 - a.t, 3);
     camera.position.lerpVectors(a.fp, a.tp, k);
@@ -863,6 +1119,26 @@ export default function DepotScene({
     .slice(0, SPOTS.length)
     .map((v, i) => ({ v, spot: SPOTS[i] }));
   const pinRefs = useRef(new Map<ZoneId, HTMLButtonElement>());
+  // visite à pied : la pièce où l'on est entré (null = vue d'en haut)
+  const [walk, setWalk] = useState<ZoneId | null>(null);
+  const [here, setHere] = useState<ZoneId | null>(null);
+  const walkInput = useRef<WalkInput>({ f: 0, s: 0, turn: 0, run: false });
+  const enter = (id: ZoneId) => {
+    walkInput.current = { f: 0, s: 0, turn: 0, run: false };
+    setHere(id);
+    setWalk(id);
+    // la fiche de la zone se ferme pendant la visite (elle cacherait les commandes) et revient à la sortie
+    onSelect(null);
+  };
+  const walkRef = useRef<ZoneId | null>(null);
+  walkRef.current = here || walk;
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+  const exitWalk = useCallback(() => {
+    const z = walkRef.current;
+    setWalk(null);
+    if (z) onSelectRef.current({ type: "zone", id: z });
+  }, []);
   const staff = useMemo(() => summary.staff || [], [summary.staff]);
   const spots = useMemo(() => standingSpots(staff), [staff]);
   const focus = useMemo(() => {
@@ -900,7 +1176,7 @@ export default function DepotScene({
         dpr={[1, 1.75]}
         camera={{ position: [80, 260, 330], fov: 36, near: 1, far: 1200 }}
         gl={{ antialias: true, alpha: true }}
-        onPointerMissed={() => onSelect(null)}
+        onPointerMissed={() => !walk && onSelect(null)}
       >
         <hemisphereLight args={["#fff4e8", "#6b5a4c", dark ? 0.5 : 0.8]} />
         <directionalLight
@@ -1012,7 +1288,15 @@ export default function DepotScene({
               position={[z.x + z.w / 2, 0.06, z.z + z.d / 2]}
               receiveShadow
               onClick={
-                interactive ? click({ type: "zone", id: z.id }) : undefined
+                interactive && !walk ? click({ type: "zone", id: z.id }) : undefined
+              }
+              onDoubleClick={
+                interactive && !walk
+                  ? (e: ThreeEvent<MouseEvent>) => {
+                      e.stopPropagation();
+                      enter(z.id);
+                    }
+                  : undefined
               }
             >
               <boxGeometry args={[z.w, 0.12, z.d]} />
@@ -1058,9 +1342,11 @@ export default function DepotScene({
             onSelect={click({ type: "vehicle", id: v.id })}
           />
         ))}
-        {interactive && <PinProjector refs={pinRefs} />}
+        {interactive && !walk && <PinProjector refs={pinRefs} />}
+        {walk && <Walker zone={walk} input={walkInput} onZone={setHere} />}
         <OrbitControls
           makeDefault
+          enabled={!walk}
           enableDamping
           dampingFactor={0.08}
           maxPolarAngle={Math.PI * 0.45}
@@ -1072,9 +1358,11 @@ export default function DepotScene({
           autoRotateSpeed={0.4}
           target={[-30, 0, 0]}
         />
-        <Rig focus={focus} home={home} />
+        <Rig focus={focus} home={home} paused={!!walk} />
       </Canvas>
+      {walk && <WalkHud zone={walk} here={here} input={walkInput} onExit={exitWalk} />}
       {interactive &&
+        !walk &&
         pinned.map((z) => (
           <Pin
             key={z.id}
@@ -1082,7 +1370,7 @@ export default function DepotScene({
             id={z.id}
             info={summary.zones[z.id]}
             active={selection?.type === "zone" && selection.id === z.id}
-            onClick={() => onSelect({ type: "zone", id: z.id })}
+            onClick={() => enter(z.id)}
           />
         ))}
     </div>
