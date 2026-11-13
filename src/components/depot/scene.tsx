@@ -39,7 +39,9 @@ export const ZONES: Zone[] = [
   { id: "futs", x: -15, z: -26, w: 22, d: 30, color: "#ddd5cb", pinY: 11 },
   { id: "patio", x: 7, z: -26, w: 21, d: 18, color: "#cbbfb1", pinY: 5 },
   { id: "depose", x: 7, z: -8, w: 21, d: 14, color: "#e3dacf", pinY: 9 },
-  { id: "bureau", x: -12, z: 6, w: 26, d: 11, color: "#f1e8de", pinY: 6 },
+  { id: "bureau", x: -12, z: 6, w: 16, d: 11, color: "#9a958f", pinY: 6 },
+  // salle café : sol stratifié gris, dans le prolongement du bureau
+  { id: "cafe", x: 4, z: 6, w: 10, d: 11, color: "#9a958f", pinY: 6 },
   { id: "soft", x: 28, z: -35, w: 30, d: 47, color: "#e6ded4", pinY: 12 },
   { id: "vins", x: 58, z: -35, w: 42, d: 36, color: "#e6ded4", pinY: 12 },
   { id: "sirop", x: 58, z: 1, w: 26, d: 11, color: "#ece4da", pinY: 6 },
@@ -446,17 +448,135 @@ function Interior() {
         <boxGeometry args={[15, 2.8, 10, 15, 3, 10]} />
         <meshBasicMaterial color="#7d8794" wireframe />
       </mesh>
-      {/* bureau téléachat : postes */}
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <group
-          key={i}
-          position={[-8 + (i % 3) * 7, 0, 9 + Math.floor(i / 3) * 4.5]}
-        >
-          <Box s={[2.4, 0.08, 1.2]} p={[0, 0.75, 0]} c="#f8f5f0" />
-          <Box s={[0.9, 0.55, 0.05]} p={[0, 1.1, -0.3]} c="#2a2d36" />
-          <Box s={[0.6, 0.9, 0.6]} p={[0, 0.45, 0.9]} c="#3a3f4b" />
+      <Office />
+      <CafeRoom />
+    </group>
+  );
+}
+
+/* Salle café, d'après photo : grande table bois et 8 chaises, chaise bleue en bout,
+   table d'appoint avec micro-ondes côté fenêtres, comptoir bois et affiche à l'entrée */
+function Chair({ p, r = 0, c = "#3a3d44" }: { p: [number, number]; r?: number; c?: string }) {
+  return (
+    <group position={[p[0], 0, p[1]]} rotation={[0, r, 0]}>
+      <Box s={[0.45, 0.06, 0.45]} p={[0, 0.46, 0]} c={c} />
+      <Box s={[0.45, 0.5, 0.05]} p={[0, 0.78, 0.2]} c={c} />
+      {[-0.19, 0.19].map((x) => [-0.19, 0.19].map((z) => <Box key={x + "/" + z} s={[0.04, 0.46, 0.04]} p={[x, 0.23, z]} c="#8d9096" cast={false} />))}
+    </group>
+  );
+}
+/* Bureau téléachat, d'après photo : îlots de bureaux bois clair face à face, écrans noirs,
+   fauteuils noirs, caissons blancs, poteau central, tableau blanc et vitre sur le dépôt */
+function Office() {
+  return (
+    <group>
+      {/* un seul îlot de 4 postes, dans la longueur de la pièce, poteau au milieu */}
+      <group position={[-4, 0, 10.2]} rotation={[0, Math.PI / 2, 0]}>
+        {[-0.82, 0.82].map((dx) => [-0.42, 0.42].map((dz) => (
+          <group key={dx + "/" + dz} position={[dx, 0, dz]}>
+            <Box s={[1.6, 0.05, 0.8]} p={[0, 0.74, 0]} c="#ecd9b8" />
+            <Box s={[0.1, 0.72, 0.1]} p={[0, 0.36, 0]} c="#f2f0ec" cast={false} />
+            {/* deux écrans sur bras, clavier */}
+            {[-0.3, 0.3].map((m) => <Box key={m} s={[0.55, 0.34, 0.03]} p={[m, 1.1, dz > 0 ? -0.28 : 0.28]} c="#17181c" />)}
+            <Box s={[0.06, 0.24, 0.06]} p={[0, 0.88, dz > 0 ? -0.3 : 0.3]} c="#17181c" cast={false} />
+            <Box s={[0.42, 0.02, 0.14]} p={[0, 0.78, dz > 0 ? 0.08 : -0.08]} c="#1d1e22" cast={false} />
+            <Box s={[0.3, 0.01, 0.42]} p={[0.5, 0.775, 0]} c="#f7f6f3" cast={false} />
+            {/* fauteuil noir */}
+            <group position={[0, 0, dz > 0 ? 0.8 : -0.8]} rotation={[0, dz > 0 ? 0 : Math.PI, 0]}>
+              <Box s={[0.48, 0.07, 0.46]} p={[0, 0.48, 0]} c="#1d1e22" />
+              <Box s={[0.46, 0.66, 0.06]} p={[0, 0.9, 0.22]} c="#1d1e22" />
+              <Box s={[0.07, 0.44, 0.07]} p={[0, 0.24, 0]} c="#3a3d44" cast={false} />
+              <Box s={[0.5, 0.04, 0.5]} p={[0, 0.03, 0]} c="#1d1e22" cast={false} />
+              {/* gilet haute visibilité posé sur un dossier */}
+              {dx < 0 && dz < 0 && <Box s={[0.5, 0.5, 0.1]} p={[0, 0.95, 0.25]} c="#d7f03c" emissive="#b8d41f" emissiveIntensity={0.15} />}
+            </group>
+          </group>
+        )))}
+      </group>
+      <Box s={[0.2, 4.5, 0.2]} p={[-4, 2.25, 10.2]} c="#c9cdd2" />
+      {/* deux caissons blancs à plateau bois, en bout d'îlot */}
+      {[-4.55, -3.45].map((x) => (
+        <group key={x}>
+          <Box s={[0.9, 0.62, 0.6]} p={[x, 0.31, 12.3]} c="#f7f6f3" />
+          <Box s={[0.94, 0.04, 0.64]} p={[x, 0.64, 12.3]} c="#ecd9b8" />
+          <Box s={[0.35, 0.18, 0.28]} p={[x, 0.75, 12.3]} c="#26272b" />
         </group>
       ))}
+      {/* dalles lumineuses du plafond */}
+      <pointLight position={[-8, 3.9, 11]} intensity={40} distance={16} color="#fff6e8" />
+      <pointLight position={[-1, 3.9, 11]} intensity={40} distance={16} color="#fff6e8" />
+      {/* mur du fond : tableau blanc, vitre sur le dépôt */}
+      <Box s={[1.5, 1.9, 0.05]} p={[-5.3, 1.75, 6.26]} c="#fbfbfa" cast={false} />
+      <Box s={[1.6, 0.06, 0.07]} p={[-5.3, 2.72, 6.27]} c="#aeb2b8" cast={false} />
+      <Box s={[3.4, 0.95, 0.05]} p={[-1.6, 1.95, 6.26]} c="#4d5a66" cast={false} roughness={0.2} />
+      {[-2.9, -2.2, -1.5, -0.8, -0.2].map((x) => <Box key={x} s={[0.4, 0.5, 0.02]} p={[x, 1.8, 6.3]} c="#c9ced4" cast={false} metalness={0.5} roughness={0.35} />)}
+      <Box s={[3.6, 0.06, 0.2]} p={[-1.6, 1.45, 6.34]} c="#fbfaf8" cast={false} />
+      {/* à droite : armoires blanches à rideaux, cartons, extincteur */}
+      <Box s={[0.5, 2, 2.6]} p={[3.6, 1, 7.7]} c="#f4f3ef" />
+      {[6.9, 7.7, 8.5].map((z) => <Box key={z} s={[0.02, 1.95, 0.03]} p={[3.34, 1, z]} c="#b9bcc0" cast={false} />)}
+      <Box s={[0.5, 0.3, 0.7]} p={[3.6, 2.15, 7.4]} c="#c9a37a" cast={false} />
+      <Box s={[0.6, 0.5, 0.6]} p={[1.7, 0.25, 6.8]} c="#c9a37a" />
+      <Box s={[0.55, 0.45, 0.55]} p={[1.7, 0.73, 6.8]} c="#b98f62" />
+      <Box s={[0.5, 0.4, 0.5]} p={[2.4, 0.2, 6.8]} c="#efe9df" />
+      <mesh position={[3.6, 0.32, 13.6]} castShadow>
+        <cylinderGeometry args={[0.09, 0.09, 0.5, 12]} />
+        <Mat c="#c0262d" />
+      </mesh>
+      {/* à gauche : paperboard avec la carte des secteurs, table noire, table d'appoint, cartons */}
+      <Box s={[0.75, 1, 0.04]} p={[-9.6, 1.45, 6.9]} c="#fbfbfa" />
+      <Box s={[0.4, 0.3, 0.02]} p={[-9.6, 1.6, 6.93]} c="#8fb37a" cast={false} />
+      <Box s={[0.4, 0.3, 0.02]} p={[-9.6, 1.2, 6.93]} c="#8fb37a" cast={false} />
+      <Box s={[0.05, 0.95, 0.05]} p={[-9.6, 0.48, 6.9]} c="#3a3d44" cast={false} />
+      <Box s={[2.2, 0.9, 0.7]} p={[-7.4, 0.45, 6.8]} c="#26272b" />
+      <Box s={[0.7, 0.05, 1.8]} p={[-11.3, 0.74, 9.2]} c="#ecd9b8" />
+      <Box s={[0.1, 0.72, 0.1]} p={[-11.3, 0.36, 9.2]} c="#f2f0ec" cast={false} />
+      {[[-11.2, 10.9, 0.5], [-10.6, 11.3, 0.35], [-11.2, 11.7, 0.4], [-10.5, 10.6, 0.3]].map(([x, z, h], i) => <Box key={i} s={[0.5, h, 0.45]} p={[x, h / 2, z]} c={i % 2 ? "#b98f62" : "#c9a37a"} />)}
+      {/* porte vers le dépôt, armoire noire et meuble bois côté entrée */}
+      <Box s={[0.9, 2.05, 0.06]} p={[-10.9, 1.03, 6.26]} c="#2a2c31" cast={false} />
+      <Box s={[0.5, 1.9, 1.4]} p={[-11.5, 0.95, 13.6]} c="#26272b" />
+      <Box s={[0.6, 1.3, 2.2]} p={[-11.4, 0.65, 15.6]} c="#e3caa4" />
+    </group>
+  );
+}
+function CafeRoom() {
+  return (
+    <group>
+      {/* cloison avec le bureau, passage ouvert */}
+      <Box s={[0.2, 3, 3]} p={[4, 1.5, 7.5]} c="#f1ebe3" />
+      <Box s={[0.2, 3, 6]} p={[4, 1.5, 14]} c="#f1ebe3" />
+      {/* comptoir bois et affiche du château, côté bureau */}
+      <Box s={[0.7, 1.35, 1.8]} p={[3.3, 0.68, 12.2]} c="#e3caa4" />
+      <Box s={[0.06, 1.1, 1.7]} p={[3.3, 2.0, 12.2]} c="#a9c3d6" cast={false} />
+      <Box s={[0.08, 0.7, 0.5]} p={[3.3, 1.85, 12.5]} c="#d8b784" cast={false} />
+      <Box s={[0.08, 0.5, 0.9]} p={[3.3, 1.75, 11.9]} c="#7f9a6f" cast={false} />
+      {/* grande table (deux plateaux bout à bout) */}
+      <Box s={[4.4, 0.06, 1.1]} p={[10.2, 0.75, 10]} c="#c9965a" />
+      {[8.7, 10.2, 11.7].map((x) => <Box key={x} s={[0.12, 0.72, 0.7]} p={[x, 0.36, 10]} c="#e9e7e3" cast={false} />)}
+      {[8.6, 9.65, 10.7, 11.75].map((x) => (
+        <group key={x}>
+          <Chair p={[x, 9.05]} r={Math.PI} />
+          <Chair p={[x, 10.95]} />
+        </group>
+      ))}
+      <Chair p={[7.5, 10]} r={-Math.PI / 2} c="#6f7fc4" />
+      {/* dalles lumineuses du plafond */}
+      <pointLight position={[9, 3.9, 11]} intensity={40} distance={16} color="#fff6e8" />
+      {/* fenêtres côté nord, table d'appoint, micro-ondes, poubelle, cartons */}
+      <Box s={[5, 1, 0.06]} p={[8.5, 2.1, 6.25]} c="#bcd3e0" cast={false} emissive="#bcd3e0" emissiveIntensity={0.25} />
+      <Box s={[1.6, 0.05, 0.7]} p={[7.4, 0.72, 6.8]} c="#efece7" />
+      <Box s={[0.1, 0.7, 0.1]} p={[7.4, 0.35, 6.8]} c="#a7a9ad" cast={false} />
+      <Box s={[0.5, 0.3, 0.38]} p={[7.1, 0.9, 6.8]} c="#f4f2ee" />
+      <Box s={[0.3, 0.2, 0.02]} p={[7.05, 0.9, 7.0]} c="#2a2d36" cast={false} />
+      <Box s={[0.4, 0.6, 0.4]} p={[8.8, 0.3, 6.8]} c="#1d1e22" />
+      <Box s={[0.5, 0.4, 0.4]} p={[5.6, 0.2, 7]} c="#c9a37a" />
+      <Box s={[0.5, 0.45, 0.4]} p={[5.6, 0.23, 7.7]} c="#efe9df" />
+      <Box s={[0.12, 0.25, 0.02]} p={[5.6, 0.25, 7.91]} c="#b3202a" cast={false} />
+      {/* coin boissons au fond à droite, porte du fond */}
+      <Box s={[0.5, 0.5, 0.5]} p={[12.6, 0.75, 13.2]} c="#1d1e22" />
+      <Box s={[0.6, 0.5, 0.5]} p={[12.6, 0.25, 13.2]} c="#b3202a" />
+      <Box s={[0.5, 0.3, 0.4]} p={[12.9, 0.15, 14.1]} c="#c9a37a" />
+      <Box s={[0.06, 2.05, 0.9]} p={[13.75, 1.03, 11.6]} c="#fbfaf8" cast={false} />
+      <Box s={[0.02, 0.25, 0.22]} p={[13.7, 1.6, 11.6]} c="#e9c22b" cast={false} />
     </group>
   );
 }
@@ -603,7 +723,8 @@ const STAND: Partial<Record<ZoneId, [number, number, number, number]>> = {
   alcool: [85, 10, 98, 11],
   quais: [30, 14.5, 60, 16],
   parking: [64, 17, 100, 18.5],
-  bureau: [-10, 11, 12, 15.5],
+  bureau: [-9, 13.4, 1.5, 15.6],
+  cafe: [6, 12.6, 11.5, 15],
   depose: [9, 1.5, 26, 4.5],
   futs: [-13, -2, 5, 2],
   patio: [9, -11, 26, -9],
@@ -811,7 +932,17 @@ const BUILDINGS: Rect[] = [
 ];
 const inRect = (r: Rect, x: number, z: number) => x >= r[0] && x <= r[2] && z >= r[1] && z <= r[3];
 /* Rangées de racks (double rangée dos à dos), à contourner */
-const RACKS: Rect[] = [31.5, 37.5, 43.5, 49.5, 61, 67, 73, 79, 85, 91].map((x) => [x - 0.55, -33.2, x + 1.75, -3.1]);
+const RACKS: Rect[] = [
+  ...[31.5, 37.5, 43.5, 49.5, 61, 67, 73, 79, 85, 91].map((x): Rect => [x - 0.55, -33.2, x + 1.75, -3.1]),
+  // bureau et salle café : cloison (passage ouvert entre z 9 et 11), comptoir, grande table
+  [-5.3, 8.5, -2.7, 12.7],
+  [-8.6, 6, -6.2, 7.3],
+  [3.2, 6, 4, 9],
+  [3.9, 6, 4.1, 9],
+  [3.9, 11, 4.1, 17],
+  [2.95, 11.3, 3.65, 13.1],
+  [8, 9.45, 12.4, 10.55],
+];
 const EYE = 1.65;
 const R = 0.35; // « épaisseur » du visiteur
 
@@ -822,12 +953,14 @@ function walkArea(id: ZoneId): Rect {
   return BUILDINGS.find((b) => inRect(b, cx, cz)) || [z.x, z.z, z.x + z.w, z.z + z.d];
 }
 /** Point d'entrée : devant la pièce, côté façade (sud), en regardant vers le fond */
-function entryOf(id: ZoneId): [number, number] {
+function entryOf(id: ZoneId): [number, number, number?] {
   const z = zoneOf(id);
   const a = walkArea(id);
   // dans les halls de racks, on entre par l'allée transversale, face à une allée entre deux rangées
   if (id === "soft") return [41.1, -1.4];
   if (id === "vins") return [76.6, -1.4];
+  // salle café : on entre par le passage depuis le bureau, comme sur la photo (regard vers l'est)
+  if (id === "cafe") return [4.9, 10, -Math.PI / 2];
   return [z.x + z.w / 2, Math.min(z.z + z.d - 2.5, a[3] - 1.2)];
 }
 function blocked(x: number, z: number, area: Rect) {
@@ -852,8 +985,8 @@ function Walker({ zone, input, onZone }: { zone: ZoneId; input: React.MutableRef
   const area = useMemo(() => walkArea(zone), [zone]);
   useEffect(() => {
     const s = st.current;
-    const [x, z] = entryOf(zone);
-    Object.assign(s, { x, z, yaw: 0, pitch: -0.06, intro: 0, last: null });
+    const [x, z, yaw0 = 0] = entryOf(zone);
+    Object.assign(s, { x, z, yaw: yaw0, pitch: -0.06, intro: 0, last: null });
     s.fromP.copy(camera.position);
     s.fromQ.copy(camera.quaternion);
     const fov = camera.fov, near = camera.near;
