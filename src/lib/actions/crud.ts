@@ -344,18 +344,32 @@ export async function setNoteStatus(ids: string[], status: "todo" | "ack" | "don
 }
 
 /** Cocher / décocher des tâches */
-export async function setTaskDone(ids: string[], done: boolean): Promise<ActionResult> {
+export async function setTaskDone(ids: string[], done: boolean, closureNote?: string): Promise<ActionResult> {
+  const note = (closureNote || "").trim();
+  if (done && !note) return { ok: false, error: "Pour clôturer, indiquez comment la tâche a été menée à bien." };
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { data: rows, error } = await supabase
     .from("tasks")
-    .update({ done, done_at: done ? new Date().toISOString() : null, done_by: done ? user?.id : null })
+    .update(done ? { done, done_at: new Date().toISOString(), done_by: user?.id, closure_note: note } : { done, done_at: null, done_by: null })
     .in("id", ids)
     .select("id");
   if (error) return { ok: false, error: frError(error.message) };
   if (!rows?.length) return { ok: false, error: frError("0 rows") };
+  revalidate("tasks");
+  return { ok: true };
+}
+
+/** Point d'étape sur une tâche : ce qui a été fait et le nouvel avancement */
+export async function addTaskUpdate(id: string, text: string, progress: number): Promise<ActionResult> {
+  const t = text.trim();
+  if (!t) return { ok: false, error: "Décrivez ce qui a été fait." };
+  const p = Math.max(0, Math.min(100, Math.round(progress)));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("add_task_update", { p_task: id, p_text: t, p_progress: p });
+  if (error) return { ok: false, error: frError(error.message) };
   revalidate("tasks");
   return { ok: true };
 }

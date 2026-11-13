@@ -1,7 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { CalendarClock, Check, ChevronDown, CircleCheckBig, FolderPlus, ListTodo, Pencil, Plus, Siren, Trash2, User } from "lucide-react";
+import { CalendarClock, Check, ChevronDown, CircleCheckBig, FolderPlus, ListTodo, MessageSquareText, Pencil, Plus, Siren, Trash2, User } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { usePerms } from "@/components/app/perms-context";
@@ -11,7 +11,8 @@ import { Card, Empty } from "@/components/ui/card";
 import { EntityForm, useEditor, useOpenOnNew } from "@/components/ui/entity-form";
 import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
-import { renameSection, saveRow, setTaskDone, trashRows } from "@/lib/actions/crud";
+import { renameSection, saveRow, trashRows } from "@/lib/actions/crud";
+import { ProgressBar, TaskFollowUp } from "./follow-up";
 import { daysBetween, fmtShort } from "@/lib/domain/dates";
 import type { Task } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,9 @@ function DueBadge({ date, done }: { date: string | null; done: boolean }) {
   );
 }
 
-function TaskRow({ t, canEdit, onToggle, onEdit, onDelete }: { t: Task; canEdit: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void }) {
+function TaskRow({ t, canEdit, onToggle, onEdit, onDelete, onOpen }: { t: Task; canEdit: boolean; onToggle: () => void; onEdit: () => void; onDelete: () => void; onOpen: () => void }) {
+  const steps = t.updates?.length || 0;
+  const last = steps ? t.updates![steps - 1] : null;
   return (
     <motion.li
       layout
@@ -42,7 +45,7 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete }: { t: Task; canEdit:
       <button
         onClick={onToggle}
         disabled={!canEdit}
-        aria-label={t.done ? `Rouvrir : ${t.title}` : `Marquer comme fait : ${t.title}`}
+        aria-label={t.done ? `Voir la clôture : ${t.title}` : `Clôturer : ${t.title}`}
         className={cn(
           "mt-0.5 grid h-[22px] w-[22px] shrink-0 place-items-center rounded-full border-2 transition-colors disabled:cursor-default",
           t.done ? "border-ok bg-ok text-white" : "border-line hover:border-ok hover:bg-ok/10",
@@ -57,7 +60,23 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete }: { t: Task; canEdit:
         </AnimatePresence>
       </button>
       <div className="min-w-0 flex-1">
-        <p className={cn("text-[15px] leading-snug", t.done && "text-muted line-through decoration-muted/60")}>{t.title}</p>
+        <button type="button" onClick={onOpen} className={cn("text-left text-[15px] leading-snug hover:text-brand", t.done && "text-muted line-through decoration-muted/60")}>
+          {t.title}
+        </button>
+        {!t.done && (t.progress > 0 || steps > 0) && (
+          <div className="mt-1.5 flex items-center gap-2">
+            <ProgressBar value={t.progress} className="max-w-[180px] flex-1" />
+            <span className="text-xs font-semibold tabular-nums text-muted">{t.progress} %</span>
+          </div>
+        )}
+        {last && !t.done && (
+          <button type="button" onClick={onOpen} className="mt-1 line-clamp-1 block text-left text-xs text-muted hover:text-ink">
+            <MessageSquareText className="mr-1 inline h-3 w-3" />
+            {last.name ? last.name.split(" ")[0] + " : " : ""}
+            {last.text}
+          </button>
+        )}
+        {t.done && t.closure_note && <p className="mt-0.5 line-clamp-1 text-xs text-muted">Clôture : {t.closure_note}</p>}
         {(t.due_date || t.assignee || t.notes) && (
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <DueBadge date={t.due_date} done={t.done} />
@@ -70,6 +89,11 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete }: { t: Task; canEdit:
           </div>
         )}
       </div>
+      {steps > 0 && (
+        <button onClick={onOpen} className="mt-0.5 hidden shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-muted hover:text-ink sm:inline-flex" aria-label={`Suivi : ${steps} point(s) d'étape`}>
+          <MessageSquareText className="h-3 w-3" /> {steps}
+        </button>
+      )}
       {canEdit && (
         <div className="flex shrink-0 gap-0.5 opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
           <button onClick={onEdit} className="grid h-7 w-7 place-items-center rounded-lg hover:bg-surface-2 hover:text-brand" aria-label={`Modifier : ${t.title}`}>
@@ -85,10 +109,10 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete }: { t: Task; canEdit:
 }
 
 function SectionCard({
-  name, tasks, index, canEdit, onToggle, onEdit, onDelete, onAdd, onRename, hideDone,
+  name, tasks, index, canEdit, onToggle, onEdit, onDelete, onAdd, onRename, hideDone, onOpen,
 }: {
   name: string; tasks: Task[]; index: number; canEdit: boolean; hideDone: boolean;
-  onToggle: (t: Task) => void; onEdit: (t: Task) => void; onDelete: (t: Task) => void;
+  onToggle: (t: Task) => void; onEdit: (t: Task) => void; onDelete: (t: Task) => void; onOpen: (t: Task) => void;
   onAdd: (section: string, title: string) => Promise<boolean>; onRename: (from: string, to: string) => void;
 }) {
   const [draft, setDraft] = useState("");
@@ -98,7 +122,7 @@ function SectionCard({
   const open = tasks.filter((t) => !t.done);
   const done = tasks.filter((t) => t.done);
   const late = open.filter((t) => t.due_date && daysBetween(t.due_date) >= 0).length;
-  const pct = tasks.length ? Math.round((done.length / tasks.length) * 100) : 0;
+  const pct = tasks.length ? Math.round(tasks.reduce((a, t) => a + (t.done ? 100 : t.progress || 0), 0) / tasks.length) : 0;
 
   const add = async () => {
     const title = draft.trim();
@@ -143,7 +167,7 @@ function SectionCard({
         <ul className="divide-y divide-line/70">
           <AnimatePresence initial={false}>
             {open.map((t) => (
-              <TaskRow key={t.id} t={t} canEdit={canEdit} onToggle={() => onToggle(t)} onEdit={() => onEdit(t)} onDelete={() => onDelete(t)} />
+              <TaskRow key={t.id} t={t} canEdit={canEdit} onToggle={() => onToggle(t)} onEdit={() => onEdit(t)} onDelete={() => onDelete(t)} onOpen={() => onOpen(t)} />
             ))}
           </AnimatePresence>
         </ul>
@@ -181,7 +205,7 @@ function SectionCard({
                 <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <AnimatePresence initial={false}>
                     {done.map((t) => (
-                      <TaskRow key={t.id} t={t} canEdit={canEdit} onToggle={() => onToggle(t)} onEdit={() => onEdit(t)} onDelete={() => onDelete(t)} />
+                      <TaskRow key={t.id} t={t} canEdit={canEdit} onToggle={() => onToggle(t)} onEdit={() => onEdit(t)} onDelete={() => onDelete(t)} onOpen={() => onOpen(t)} />
                     ))}
                   </AnimatePresence>
                 </motion.ul>
@@ -202,15 +226,14 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
   useOpenOnNew(ed.create);
   const [, start] = useTransition();
   // état local pour cocher sans attendre le serveur
-  const [overrides, setOverrides] = useState<Record<string, boolean>>({});
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [extraSections, setExtraSections] = useState<string[]>([]);
   const [newSection, setNewSection] = useState<string | null>(null);
   const [hideDone, setHideDone] = useState(false);
 
   const tasks = useMemo(
-    () => initial.filter((t) => !hidden.has(t.id)).map((t) => (t.id in overrides ? { ...t, done: overrides[t.id] } : t)),
-    [initial, overrides, hidden],
+    () => initial.filter((t) => !hidden.has(t.id)),
+    [initial, hidden],
   );
   const sections = useMemo(() => {
     const order: string[] = [];
@@ -223,19 +246,11 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
   const urgent = open.filter((t) => t.due_date && daysBetween(t.due_date) >= 0).length;
   const doneWeek = tasks.filter((t) => t.done && t.done_at && daysBetween(t.done_at.slice(0, 10)) <= 7).length;
 
-  const toggle = (t: Task) => {
-    const next = !t.done;
-    setOverrides((o) => ({ ...o, [t.id]: next }));
-    start(async () => {
-      const r = await setTaskDone([t.id], next);
-      if (!r.ok) {
-        setOverrides((o) => ({ ...o, [t.id]: t.done }));
-        return void toast.error(r.error);
-      }
-      if (next) toast.success("Tâche faite", { description: t.title, action: { label: "Annuler", onClick: () => toggle({ ...t, done: true }) } });
-      router.refresh();
-    });
-  };
+  // suivi : on ne coche plus directement, on passe par le suivi et un mot de clôture
+  const [follow, setFollow] = useState<{ id: string; mode: "follow" | "close" } | null>(null);
+  const followed = follow ? tasks.find((x) => x.id === follow.id) || null : null;
+  const toggle = (t: Task) => setFollow({ id: t.id, mode: t.done ? "follow" : "close" });
+  const openFollow = (t: Task) => setFollow({ id: t.id, mode: "follow" });
   const remove = (t: Task) => {
     setHidden((h) => new Set(h).add(t.id));
     start(async () => {
@@ -276,7 +291,7 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
       <PageHeader
         title="To do list"
         icon={<ListTodo className="h-6 w-6" />}
-        subtitle="Les actions à mener, par rubrique. Cochez quand c'est fait."
+        subtitle="Les actions à mener, par rubrique. Notez l'avancement au fil de l'eau, puis clôturez avec un mot de clôture."
         actions={
           canEdit && (
             <>
@@ -350,6 +365,7 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
               onDelete={remove}
               onAdd={add}
               onRename={rename}
+              onOpen={openFollow}
             />
           ))}
         </div>
@@ -361,6 +377,7 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
         </Card>
       )}
 
+      <TaskFollowUp task={followed} open={!!followed} mode={follow?.mode || "follow"} onClose={() => setFollow(null)} canEdit={canEdit} />
       <EntityForm
         open={ed.open}
         onClose={ed.close}

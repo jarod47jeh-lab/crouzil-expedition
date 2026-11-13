@@ -63,11 +63,11 @@ export function EmployeeDetail({
         icon={<Avatar e={emp} size={48} />}
         actions={
           <>
-            <CanWrite module="equipe">
+            {perms.admin && (
               <Button variant="outline" onClick={() => setPicker(true)}>
                 <Smile className="h-4 w-4" /> Avatar
               </Button>
-            </CanWrite>
+            )}
             {emp.phone && (
               <a href={`tel:${emp.phone}`}>
                 <Button variant="outline"><Phone className="h-4 w-4" /> Appeler</Button>
@@ -197,7 +197,7 @@ export function EmployeeDetail({
       </div>
       <EntityForm open={ed.open} onClose={ed.close} title={`Modifier ${emp.name}`} table="employees" id={emp.id} initial={employeeInitial(emp)} fields={EMPLOYEE_FIELDS} />
       <LeaveForm open={leave.open} onClose={leave.close} row={leave.row} employees={[emp]} requests={requests} defaultEmployee={emp.id} />
-      <AvatarPicker emp={emp} open={picker} onClose={() => setPicker(false)} />
+      {perms.admin && <AvatarPicker emp={emp} open={picker} onClose={() => setPicker(false)} />}
     </>
   );
 }

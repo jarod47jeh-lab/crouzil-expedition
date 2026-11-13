@@ -34,7 +34,7 @@ export interface Employee extends Row {
   size_gloves: string | null;
   /** Zone du dépôt où il travaille (voir ZONE_IDS) */
   zone: string | null;
-  avatar: { skin: number; hair: number; hairColor: number; glasses?: boolean; beard?: boolean } | null;
+  avatar: import("@/lib/domain/avatar").AvatarStyle | null;
 }
 
 export type SizeKind = "top" | "bottom" | "shoe" | "gloves";
@@ -229,6 +229,19 @@ export interface Task extends Row {
   done_by: string | null;
   position: number;
   created_by: string | null;
+  /** Avancement de 0 à 100 % */
+  progress: number;
+  /** Points d'étape, du plus ancien au plus récent */
+  updates: TaskUpdate[] | null;
+  /** Mot de clôture (obligatoire pour clôturer) */
+  closure_note: string | null;
+}
+export interface TaskUpdate {
+  at: string;
+  by: string | null;
+  name: string | null;
+  text: string;
+  progress: number;
 }
 
 export interface AuditEntry {
