@@ -16,6 +16,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { DepotStaff, DepotSummary, DepotVehicle, ZoneId } from "./summary";
 import { avatarOf, HAIR_COLORS, SKINS, TEAM_SHIRT } from "@/lib/domain/avatar";
 import { ZONE_META } from "./overview";
+import { DepotModel } from "./model";
 
 export type Selection =
   | { type: "zone"; id: ZoneId }
@@ -940,6 +941,8 @@ const inRect = (r: Rect, x: number, z: number) => x >= r[0] && x <= r[2] && z >=
 /* Rangées de racks (double rangée dos à dos), à contourner */
 const RACKS: Rect[] = [
   ...[31.5, 37.5, 43.5, 49.5, 61, 67, 73, 79, 85, 91].map((x): Rect => [x - 0.55, -33.2, x + 1.75, -3.1]),
+  // mur entre soft et vins (ouvertures au nord et au sud)
+  [57.8, -30.6, 58.2, -3.6],
   // bureau et salle café : cloison (passage ouvert entre z 9 et 11), comptoir, grande table
   [4.7, 8.5, 7.3, 12.7],
   [1.4, 6, 3.8, 7.3],
@@ -1278,6 +1281,9 @@ export default function DepotScene({
     setWalk(null);
     if (z) onSelectRef.current({ type: "zone", id: z });
   }, []);
+  // décor Blender chargé : la maquette simple et ses zones opaques s'effacent
+  const [model, setModel] = useState(false);
+  const onModelReady = useCallback(() => setModel(true), []);
   const staff = useMemo(() => summary.staff || [], [summary.staff]);
   const spots = useMemo(() => standingSpots(staff), [staff]);
   const focus = useMemo(() => {
@@ -1339,6 +1345,8 @@ export default function DepotScene({
           <planeGeometry args={[420, 200]} />
           <Mat c={dark ? "#2a2523" : "#e7e1d8"} />
         </mesh>
+        {/* décor modélisé dans Blender ; la maquette simple ci-dessous sert pendant le chargement */}
+        <DepotModel onReady={onModelReady} legacy={<>
         <mesh
           rotation={[-Math.PI / 2, 0, 0]}
           position={[-40, 0, 8]}
@@ -1417,6 +1425,7 @@ export default function DepotScene({
           wall="#f1ebe3"
           front={1.2}
         />
+        </>} />
 
         {ZONES.map((z) => {
           const info = summary.zones[z.id];
@@ -1439,28 +1448,42 @@ export default function DepotScene({
               }
             >
               <boxGeometry args={[z.w, 0.12, z.d]} />
-              <Mat
-                c={z.color}
-                emissive={on ? "#ce0013" : info?.alerts ? "#d6333a" : "#000000"}
-                emissiveIntensity={on ? 0.28 : info?.alerts ? 0.12 : 0}
-              />
+              {model ? (
+                // décor Blender : la zone reste cliquable mais ne se voit que sélectionnée ou en alerte
+                <Mat
+                  c={on ? "#ce0013" : "#d6333a"}
+                  transparent
+                  opacity={on ? 0.32 : info?.alerts ? 0.18 : 0}
+                  depthWrite={false}
+                />
+              ) : (
+                <Mat
+                  c={z.color}
+                  emissive={on ? "#ce0013" : info?.alerts ? "#d6333a" : "#000000"}
+                  emissiveIntensity={on ? 0.28 : info?.alerts ? 0.12 : 0}
+                />
+              )}
             </mesh>
           );
         })}
-        {/* marquage au sol des quais */}
-        {[29, 39.5, 50.5, 61].map((x) => (
-          <Box
-            key={x}
-            s={[0.25, 0.04, 9]}
-            p={[x, 0.14, 16.5]}
-            c="#e9c22b"
-            cast={false}
-          />
-        ))}
-        <Doors />
-        <Interior />
-        <Forklift path={[30, -1, 56, -1]} />
-        <Forklift path={[-85, 10, -30, 10]} />
+        {!model && (
+          <>
+            {/* marquage au sol des quais */}
+            {[29, 39.5, 50.5, 61].map((x) => (
+              <Box
+                key={x}
+                s={[0.25, 0.04, 9]}
+                p={[x, 0.14, 16.5]}
+                c="#e9c22b"
+                cast={false}
+              />
+            ))}
+            <Doors />
+            <Interior />
+            <Forklift path={[30, -1, 56, -1]} />
+            <Forklift path={[-85, 10, -30, 10]} />
+          </>
+        )}
         {staff
           .filter((s) => s.present && spots.has(s.id))
           .map((s) => (
