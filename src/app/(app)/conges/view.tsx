@@ -1,5 +1,6 @@
 "use client";
 import { Avatar } from "@/components/ui/avatar";
+import { CongesExportButton } from "@/components/app/export-buttons";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -48,11 +49,14 @@ export function CongesView(p: Props) {
         icon={<CalendarCheck2 className="h-6 w-6" />}
         subtitle="Qui est là, planning, demandes et soldes"
         actions={
-          <CanWrite module="conges">
-          <Button onClick={leave.create}>
-            <Plus className="h-4 w-4" /> Nouvelle demande
-          </Button>
-          </CanWrite>
+          <>
+            <CongesExportButton year={p.year} month={p.month} employees={p.employees} leaves={p.leaves} marks={p.marks} calls={p.calls} settings={p.settings} />
+            <CanWrite module="conges">
+              <Button onClick={leave.create}>
+                <Plus className="h-4 w-4" /> Nouvelle demande
+              </Button>
+            </CanWrite>
+          </>
         }
       />
       <Tabs
