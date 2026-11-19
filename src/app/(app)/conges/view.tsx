@@ -24,6 +24,7 @@ import { DAYS_SHORT, MONTHS, addDays, fmtDate, fmtLong, fmtShort, isHoliday, isW
 import type { DayMark, Employee, FreelanceCall, LeaveRequest, LeaveType, Settings, Team } from "@/lib/types";
 import { cn, nf } from "@/lib/utils";
 import { LeaveForm } from "./leave-form";
+import { CellEditor } from "./cell-editor";
 
 interface Props {
   tab: string;
@@ -70,7 +71,7 @@ export function CongesView(p: Props) {
         ]}
       />
       {p.tab === "jour" && <DayTab {...p} />}
-      {p.tab === "planning" && <PlanningTab {...p} />}
+      {p.tab === "planning" && <PlanningTab {...p} onEdit={leave.edit} />}
       {p.tab === "demandes" && <RequestsTab {...p} onEdit={leave.edit} />}
       {p.tab === "soldes" && <BalancesTab {...p} />}
       <LeaveForm open={leave.open} onClose={leave.close} row={leave.row} employees={p.employees} requests={p.leaves} defaultDate={p.day} />
@@ -274,9 +275,11 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
 // ---------------------------------------------------------------------
 // Planning mensuel
 // ---------------------------------------------------------------------
-function PlanningTab({ year, month, employees, leaves, marks, calls, settings }: Props) {
+function PlanningTab({ year, month, employees, leaves, marks, calls, settings, onEdit }: Props & { onEdit: (r: LeaveRequest) => void }) {
   const router = useRouter();
   const canEdit = usePerms().write("conges");
+  // case ouverte pour modifier ou supprimer la saisie
+  const [cell, setCell] = useState<{ emp: Employee; day: string } | null>(null);
   const [brush, setBrush] = useState<string | null>(null);
   const [, start] = useTransition();
   const [optimistic, setOptimistic] = useState<Record<string, string>>({});
@@ -296,7 +299,9 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
     return absencesOn(d, leaves.filter((r) => r.employee_id === e.id), marks.filter((m) => m.employee_id === e.id), true)[0] || null;
   };
   const paint = (e: Employee, d: Date) => {
-    if (!brush || e.freelance || !isWorkDay(d)) return;
+    if (e.freelance || !isWorkDay(d)) return;
+    // sans pinceau, un clic ouvre la case pour la modifier ou la supprimer
+    if (!brush) return void setCell({ emp: e, day: iso(d) });
     const k = `${e.id}|${iso(d)}`;
     setOptimistic((o) => ({ ...o, [k]: brush }));
     start(async () => {
@@ -345,15 +350,19 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
           )}
         </div>}
       </Card>
-      {brush && <p className="text-sm text-muted">Cliquez sur les cases pour appliquer « {brush === "PRES" ? "Présent" : LEAVE_LABEL[brush as LeaveType]} ». La saisie jour par jour remplace les demandes validées ce jour-là.</p>}
+      {brush ? (
+        <p className="text-sm text-muted">Cliquez sur les cases pour appliquer « {brush === "PRES" ? "Présent" : LEAVE_LABEL[brush as LeaveType]} ». La saisie jour par jour remplace les demandes validées ce jour-là.</p>
+      ) : (
+        <p className="text-sm text-muted">Cliquez sur une case pour voir, modifier ou supprimer la saisie de ce jour.</p>
+      )}
       <Card className="overflow-hidden">
-        <div className="overflow-x-auto [contain:paint]">
+        <div className="max-h-[calc(100dvh-15rem)] min-h-[320px] overflow-auto overscroll-contain">
           <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="bg-surface-2/60">
-                <th className="sticky left-0 z-10 min-w-[150px] bg-surface-2 px-3 py-2 text-left font-semibold">Collaborateur</th>
+              <tr>
+                <th className="sticky top-0 left-0 z-30 min-w-[150px] border-b border-line bg-surface-2 px-3 py-2 text-left font-semibold">Collaborateur</th>
                 {days.map((d) => (
-                  <th key={d.getDate()} className={cn("min-w-[30px] px-0.5 py-1.5 text-center font-semibold", !isWorkDay(d) && "text-muted/60", iso(d) === iso(today()) && "text-brand")}>
+                  <th key={d.getDate()} className={cn("sticky top-0 z-20 min-w-[30px] border-b border-line bg-surface-2 px-0.5 py-1.5 text-center font-semibold", !isWorkDay(d) && "text-muted/60", iso(d) === iso(today()) && "text-brand")}>
                     <div className="text-[10px]">{DAYS_SHORT[d.getDay()]}</div>
                     <div>{d.getDate()}</div>
                   </th>
@@ -394,9 +403,8 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
                           <td key={d.getDate()} className="p-0.5">
                             <button
                               onClick={() => paint(e, d)}
-                              disabled={!brush}
                               title={c ? `${LEAVE_LABEL[c.type]}${c.pending ? " (en attente)" : ""}` : "Présent"}
-                              className={cn("block h-6 w-full rounded-md text-[10px] font-bold transition-transform", brush && "cursor-crosshair hover:scale-110", !c && brush && "hover:bg-surface-2")}
+                              className={cn("block h-6 w-full rounded-md text-[10px] font-bold transition-transform", brush ? "cursor-crosshair hover:scale-110" : "cursor-pointer hover:ring-2 hover:ring-brand/40", !c && "hover:bg-surface-2")}
                               style={
                                 c
                                   ? c.pending
@@ -431,6 +439,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings }:
         </div>
       </Card>
       <Legend inline items={LEAVE_TYPES.map((t) => ({ label: t.label, color: t.color }))} />
+      <CellEditor emp={cell?.emp || null} day={cell?.day || null} onClose={() => setCell(null)} leaves={leaves} marks={marks} canEdit={canEdit} onEditRequest={onEdit} />
     </div>
   );
 }
