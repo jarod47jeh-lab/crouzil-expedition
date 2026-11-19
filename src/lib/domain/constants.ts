@@ -21,10 +21,10 @@ export const LEAVE_STATUS: Record<LeaveStatus, { label: string; tone: Tone }> = 
   rejected: { label: "Refusé", tone: "muted" },
 };
 
-export const TEAMS = { chauf: "Chauffeurs", prep: "Préparateurs", commande: "Service Commande", bureau: "Bureau Direction" } as const;
+export const TEAMS = { resp: "Responsables", chauf: "Chauffeurs", prep: "Préparateurs", commande: "Service Commande", bureau: "Bureau Direction" } as const;
 /** Ordre d'affichage des équipes */
-export const TEAM_ORDER = ["chauf", "prep", "commande", "bureau"] as const;
-export const TEAM_TONE = { chauf: "info", prep: "violet", commande: "warn", bureau: "ok" } as const;
+export const TEAM_ORDER = ["resp", "chauf", "prep", "commande", "bureau"] as const;
+export const TEAM_TONE = { resp: "brand", chauf: "info", prep: "violet", commande: "warn", bureau: "ok" } as const;
 /** Seuil d'absents simultanés (null = pas d'alerte pour cette équipe) */
 export const teamMax = (g: string, s: { max_abs: number; max_abs_prep: number }): number | null =>
   g === "chauf" ? s.max_abs : g === "prep" ? s.max_abs_prep : null;

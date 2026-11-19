@@ -22,7 +22,7 @@ export interface DepotZoneInfo {
   stat?: string;
 }
 /** Zone de travail par défaut de chaque équipe */
-export const TEAM_ZONE: Record<Team, ZoneId> = { chauf: "quais", prep: "soft", commande: "bureau", bureau: "bureau" };
+export const TEAM_ZONE: Record<Team, ZoneId> = { resp: "bureau", chauf: "quais", prep: "soft", commande: "bureau", bureau: "bureau" };
 export const zoneOfEmployee = (e: Pick<Employee, "zone" | "team">): ZoneId => ((ZONE_IDS as readonly string[]).includes(e.zone || "") ? (e.zone as ZoneId) : TEAM_ZONE[e.team]);
 
 export interface DepotStaff {

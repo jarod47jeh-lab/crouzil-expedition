@@ -12,6 +12,22 @@ export interface AvatarStyle {
   /** Barbe de quelques jours */
   stubble?: boolean;
   mustache?: boolean;
+  /** Barbe longue et bouc */
+  longBeard?: boolean;
+  goatee?: boolean;
+  /** Traits du visage : indices dans FACES, BROWS, EYES, EYE_COLORS, NOSES, MOUTHS (0 par défaut) */
+  face?: number;
+  brows?: number;
+  eyes?: number;
+  eyeColor?: number;
+  nose?: number;
+  mouth?: number;
+  /** Détails */
+  wrinkles?: boolean;
+  freckles?: boolean;
+  earrings?: boolean;
+  /** Lunettes : 0 rondes, 1 rectangulaires, 2 fines (si glasses) */
+  glassesStyle?: number;
   /** Femme ou homme : sert à proposer des coiffures et à générer l'avatar par défaut */
   gender?: Gender;
   /** Modèle d'origine, pour l'afficher dans l'éditeur */
@@ -21,11 +37,19 @@ export interface AvatarStyle {
 export const SKINS = ["#f7dcc8", "#efc4a1", "#dba67f", "#bd8459", "#8f5b3a", "#5f3b25"];
 /** Les indices existants ne bougent pas (avatars déjà enregistrés) : on ajoute en fin de liste */
 export const HAIR_COLORS = ["#231914", "#5a3a22", "#8a5a2b", "#c99a4b", "#a9a39d", "#e9e1d4", "#a4492a", "#e6c57a"];
-export const HAIRS = ["Court", "Long", "Chignon", "Rasé", "Bouclé", "Casquette", "Carré", "Afro", "Queue de cheval", "Dégarni", "Tresses"];
+export const HAIRS = ["Court", "Long", "Chignon", "Rasé", "Bouclé", "Casquette", "Carré", "Afro", "Queue de cheval", "Dégarni", "Tresses", "Dégradé", "Mi-long", "Coiffé en arrière", "Frange", "Foulard", "Chauve"];
 /** Coiffures proposées en premier selon le genre (toutes restent possibles) */
-export const HAIRS_BY_GENDER: Record<Gender, number[]> = { H: [0, 3, 9, 4, 7, 5, 1, 10], F: [1, 6, 8, 2, 4, 7, 10, 0] };
+export const HAIRS_BY_GENDER: Record<Gender, number[]> = { H: [0, 11, 13, 3, 16, 9, 4, 7, 12, 5, 1, 10], F: [1, 12, 6, 14, 8, 2, 4, 7, 10, 15, 0, 11] };
+export const FACES = ["Ovale", "Rond", "Carré", "Allongé", "Cœur"];
+export const BROWS = ["Fins", "Épais", "Arqués", "Droits", "Froncés"];
+export const EYES = ["Ronds", "En amande", "Rieurs", "Tombants", "Grands"];
+export const EYE_COLORS = ["#2b1d16", "#5b3a22", "#8a6a3a", "#5d7a4a", "#4f7ea8", "#7c8590"];
+export const EYE_COLOR_NAMES = ["Noirs", "Marron", "Noisette", "Verts", "Bleus", "Gris"];
+export const NOSES = ["Discret", "Moyen", "Large", "Long", "Retroussé"];
+export const MOUTHS = ["Sourire", "Neutre", "Grand sourire", "Lèvres pleines", "Sérieux"];
+export const GLASSES = ["Rondes", "Rectangulaires", "Fines"];
 /** Tenue de l'équipe : polo rouge Crouzil pour les chauffeurs, marine pour les préparateurs… */
-export const TEAM_SHIRT: Record<Team, string> = { chauf: "#ce0013", prep: "#1c2f5c", commande: "#2f7d55", bureau: "#3a3f4b" };
+export const TEAM_SHIRT: Record<Team, string> = { resp: "#111318", chauf: "#ce0013", prep: "#1c2f5c", commande: "#2f7d55", bureau: "#3a3f4b" };
 
 /** Modèles inspirés de personnalités, dessinés au même style simple que les autres avatars */
 export interface AvatarPreset {
