@@ -2,6 +2,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import { AvatarStudio } from "@/components/app/avatar-picker";
+import { TeamExportButton } from "@/components/app/export-buttons";
 import { useState } from "react";
 import { Plus, Smile, Users } from "lucide-react";
 import Link from "next/link";
@@ -32,6 +33,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
         subtitle={`Collaborateurs, fonctions et soldes de congés ${year}`}
         actions={
           <>
+            <TeamExportButton />
             {perms.admin && (
               <Button variant="outline" onClick={() => setStudio(true)}>
                 <Smile className="h-4 w-4" /> Avatars

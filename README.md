@@ -23,6 +23,11 @@ Accès **sur invitation**, réservé aux responsables et à la direction. Chaque
 
 Partout : recherche globale (`Ctrl + K` / `⌘K`), exports Excel et CSV, mode sombre, affichage adapté au téléphone.
 
+**Exports complets avec indicateurs** (bouton « Exporter ») :
+- **Équipe** et **Tenues et équipements** : classeur avec un onglet « Indicateurs » (effectif par équipe, ancienneté, tailles renseignées, CP restants, taux d'équipement par catégorie), puis collaborateurs, tailles, état des dotations, besoins de commande par taille, historique et catalogue.
+- **Présences et congés** : mois affiché, année ou période libre ; onglet « Indicateurs » (jours d'absence, taux d'absence et d'absentéisme, par équipe, par motif et par mois, pic d'absents, jours au-dessus du seuil, demandes, freelances), puis planning jour par jour, détail des absences, demandes, soldes et freelances.
+- En Excel, un onglet par tableau ; en CSV (séparateur « ; »), un seul fichier avec les indicateurs en tête puis chaque tableau.
+
 ## Menus
 
 L'appli est organisée par espace métier : **Aujourd'hui**, **Livraisons** (remontées clients, erreurs et conformité, clients), **Dépôt** (plan 3D, véhicules et matériel, réparations), **Équipes** (planning et congés, collaborateurs, tenues et équipements), **Actions** (to do list, journal). L'administration est rangée en bas du menu. Sur téléphone, les cinq espaces sont en bas de l'écran, avec un bouton « + » pour créer vite.

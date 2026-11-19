@@ -16,6 +16,7 @@ import { Kpi } from "@/components/ui/kpi";
 import { PageHeader } from "@/components/ui/page-header";
 import { Tabs } from "@/components/ui/tabs";
 import { patchRows, saveRow } from "@/lib/actions/crud";
+import { TeamExportButton } from "@/components/app/export-buttons";
 import { TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
 import { fmtDate, iso, today } from "@/lib/domain/dates";
 import { applies, CATEGORIES, ISSUE_STATE, issueStatus, SIZE_KINDS, sizeOf } from "@/lib/domain/equipment";
@@ -42,7 +43,7 @@ export function EquipmentView({ tab, team, employees, items, issues }: { tab: Ta
   const href = (k: Tab, tm = team) => `/equipements?tab=${k}${k === "dotations" || k === "commande" ? `&team=${tm}` : ""}`;
   return (
     <>
-      <PageHeader title="Tenues et équipements" icon={<HardHat className="h-6 w-6" />} subtitle="Tailles, dotations nominatives avec émargement, renouvellements et commande groupée" />
+      <PageHeader title="Tenues et équipements" icon={<HardHat className="h-6 w-6" />} subtitle="Tailles, dotations nominatives avec émargement, renouvellements et commande groupée" actions={<TeamExportButton />} />
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi index={0} label="Tailles renseignées" value={sized.length} suffix={` / ${employees.length}`} tone={sized.length < employees.length ? "warn" : "ok"} icon={<Ruler className="h-5 w-5" />} href={href("tailles")} />
         <Kpi index={1} label="Articles au catalogue" value={items.filter((i) => i.active).length} icon={<HardHat className="h-5 w-5" />} href={href("catalogue")} />
