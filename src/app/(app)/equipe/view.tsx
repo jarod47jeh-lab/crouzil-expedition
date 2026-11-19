@@ -48,7 +48,7 @@ export function EquipeView({ rows, year }: { rows: Row[]; year: number }) {
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="Effectif actif" value={active.length} icon={<Users className="h-5 w-5" />} />
         <Kpi index={1} label="Chauffeurs et préparateurs" value={active.filter((r) => (r.team === "chauf" || r.team === "prep") && !r.freelance).length} tone="info" />
-        <Kpi index={2} label="Commande et direction" value={active.filter((r) => r.team === "commande" || r.team === "bureau").length} tone="violet" />
+        <Kpi index={2} label="Responsables, commande et direction" value={active.filter((r) => r.team === "resp" || r.team === "commande" || r.team === "bureau").length} tone="violet" />
         <Kpi index={3} label="Freelances" value={active.filter((r) => r.freelance).length} tone="warn" />
       </div>
       <DataTable

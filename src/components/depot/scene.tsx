@@ -817,10 +817,10 @@ function Person({
           <sphereGeometry args={[0.2, 16, 12]} />
           <Mat c={skin} />
         </mesh>
-        {a.hair !== 3 && a.hair !== 9 && (
+        {a.hair !== 3 && a.hair !== 9 && a.hair !== 16 && (
           <mesh
             position={[0, 1.72, -0.02]}
-            scale={a.hair === 7 ? [1.45, 1.35, 1.45] : [1, a.hair === 1 || a.hair === 6 || a.hair === 10 ? 1.15 : 0.8, 1]}
+            scale={a.hair === 7 ? [1.45, 1.35, 1.45] : a.hair === 15 ? [1.2, 1.25, 1.2] : [1, a.hair === 1 || a.hair === 6 || a.hair === 10 || a.hair === 12 || a.hair === 14 ? 1.15 : 0.8, 1]}
           >
             <sphereGeometry
               args={[0.215, 16, 10, 0, Math.PI * 2, 0, Math.PI / 2]}
@@ -829,7 +829,7 @@ function Person({
           </mesh>
         )}
         {/* cheveux longs, carré et tresses : dans le dos */}
-        {(a.hair === 1 || a.hair === 6 || a.hair === 10) && (
+        {(a.hair === 1 || a.hair === 6 || a.hair === 10 || a.hair === 12 || a.hair === 14 || a.hair === 15) && (
           <mesh position={[0, a.hair === 6 ? 1.6 : 1.46, -0.1]}>
             <boxGeometry args={[0.38, a.hair === 6 ? 0.22 : 0.5, 0.14]} />
             <Mat c={hair} />
