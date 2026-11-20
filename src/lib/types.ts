@@ -38,6 +38,27 @@ export interface Employee extends Row {
 }
 
 export type SizeKind = "top" | "bottom" | "shoe" | "gloves";
+export type QualificationCategory = "caces" | "conduite" | "secours" | "securite" | "autre";
+export interface QualificationType extends Row {
+  name: string;
+  category: QualificationCategory;
+  /** Durée de validité en mois (null : sans échéance) */
+  validity_months: number | null;
+  teams: Team[] | null;
+  /** Obligatoire pour les équipes concernées */
+  required: boolean;
+  position: number;
+  active: boolean;
+}
+export interface Qualification extends Row {
+  employee_id: string;
+  type_id: string;
+  obtained_on: string | null;
+  expires_on: string | null;
+  provider: string | null;
+  reference: string | null;
+  note: string | null;
+}
 export interface EquipmentItem extends Row {
   name: string;
   category: "tenue" | "epi" | "outil" | "acces";

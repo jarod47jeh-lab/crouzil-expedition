@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type {
-  DeliveryNote, Task, EquipmentItem, EquipmentIssue,
+  DeliveryNote, Task, EquipmentItem, EquipmentIssue, Qualification, QualificationType,
   Announcement, Asset, AuditEntry, Client, DayMark, DeliveryError, Employee, FreelanceCall, JournalEntry, Justification, LeaveRequest, Member, Repair, Settings,
 } from "@/lib/types";
 
@@ -132,6 +132,15 @@ export async function getTasks(sb?: SB) {
 export async function getNotes(sb?: SB) {
   sb ||= await createClient();
   return all<DeliveryNote>(() => sb!.from("delivery_notes").select("*").is("deleted_at", null).order("due_date", { ascending: true, nullsFirst: false }).order("created_at", { ascending: false }));
+}
+
+export async function getQualifications(sb?: SB) {
+  sb ||= await createClient();
+  const [types, quals] = await Promise.all([
+    all<QualificationType>(() => sb!.from("qualification_types").select("*").is("deleted_at", null).order("position").order("name")),
+    all<Qualification>(() => sb!.from("qualifications").select("*").is("deleted_at", null).order("obtained_on", { ascending: false })),
+  ]);
+  return { types, quals };
 }
 
 export async function getEquipment(sb?: SB) {

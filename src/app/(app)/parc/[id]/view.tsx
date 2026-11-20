@@ -19,6 +19,7 @@ import { RepairCard } from "../../reparations/view";
 import { RepairForm } from "../../reparations/shared";
 import { ASSET_FIELDS, assetInitial } from "../fields";
 import { DueBadge } from "../view";
+import { TruckArt } from "@/components/ui/truck-art";
 
 const VehicleModel = dynamic(() => import("@/components/depot/vehicle-model"), { ssr: false });
 
@@ -61,6 +62,59 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
           </>
         }
       />
+      {/* en haut : le véhicule et sa fiche, côte à côte */}
+      <div className="mb-6 grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+        <Card className="overflow-hidden">
+          <div className="relative h-[300px] bg-gradient-to-b from-surface-2/70 to-surface sm:h-[360px]">
+            {a.kind === "VEH" ? (
+              <VehicleModel v={vehicle} />
+            ) : (
+              <div className="grid h-full place-items-center">
+                <TruckArt state={vehicle.state} small className="w-3/4 max-w-[360px] opacity-90" />
+              </div>
+            )}
+            <span className="absolute top-3 left-4 rounded-md border-2 border-ink bg-surface px-2 font-mono text-base font-bold">{a.ref || a.name}</span>
+            <span className="absolute top-3 right-4">
+              <Badge tone={vehicle.state === "bad" ? "bad" : vehicle.state === "warn" ? "warn" : "ok"}>{vehicle.state === "bad" ? "Immobilisé" : vehicle.state === "warn" ? "À surveiller" : "Disponible"}</Badge>
+            </span>
+          </div>
+          <p className="border-t border-line px-4 py-2.5 text-sm text-muted">{vehicle.note}</p>
+        </Card>
+        <Card className="flex flex-col">
+          <CardHeader title="Fiche du véhicule" subtitle={ASSET_KINDS[a.kind].label} />
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-3 px-5 pb-4 text-sm">
+            {[
+              ["Immatriculation", a.ref],
+              ["Désignation", a.designation],
+              ["Marque", a.brand],
+              ["Modèle", a.model],
+              ["Tonnage", a.tonnage],
+              ["Palettes", a.pallets],
+              ["Kilométrage", a.mileage ? `${nf(a.mileage)} km` : null],
+              ["Chauffeur attitré", a.assigned_to],
+            ].map(([k, v]) => (
+              <div key={String(k)} className="min-w-0">
+                <dt className="text-xs text-muted">{k}</dt>
+                <dd className="truncate font-semibold">{v || "–"}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="grid gap-2 border-t border-line px-5 py-4 text-sm">
+            <p className="text-xs font-semibold tracking-wide text-muted uppercase">Échéances</p>
+            {[
+              ["Contrôle technique", a.ct_due],
+              ["Entretien", a.service_due],
+              ["Assurance", a.insurance_due],
+            ].map(([k, d]) => (
+              <div key={k} className="flex items-center justify-between gap-2">
+                <span className="text-muted">{k}</span>
+                <DueBadge d={d} />
+              </div>
+            ))}
+          </div>
+          {a.note && <p className="mt-auto border-t border-line px-5 py-4 text-sm whitespace-pre-wrap">{a.note}</p>}
+        </Card>
+      </div>
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Kpi index={0} label="Réparations en cours" value={open.length} tone={open.some((r) => r.immobilized) ? "bad" : open.length ? "warn" : "ok"} />
         <Kpi index={1} label="Total des demandes" value={repairs.length} tone="info" />
@@ -69,57 +123,12 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
-          <CardHeader title="Historique des réparations" subtitle={`${repairs.length} demande(s)`} />
-          <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2">
+          <CardHeader title="Historique des réparations" subtitle={`${repairs.length} demande(s) · ${open.length} en cours`} />
+          <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 2xl:grid-cols-3">
             {repairs.length ? repairs.map((r, i) => <RepairCard key={r.id} r={r} i={i} />) : <Empty title="Aucune réparation enregistrée" />}
           </div>
         </Card>
-        <div className="grid min-w-0 content-start gap-6">
-          {a.kind === "VEH" && (
-            <Card className="overflow-hidden">
-              <div className="relative h-[220px] bg-gradient-to-b from-surface-2/60 to-surface">
-                <VehicleModel v={vehicle} />
-                <span className="absolute top-3 left-4 rounded-md border-2 border-ink bg-surface px-2 font-mono text-sm font-bold">{a.ref || a.name}</span>
-                <span className="absolute top-3 right-4">
-                  <Badge tone={vehicle.state === "bad" ? "bad" : vehicle.state === "warn" ? "warn" : "ok"}>{vehicle.state === "bad" ? "Immobilisé" : vehicle.state === "warn" ? "À surveiller" : "Disponible"}</Badge>
-                </span>
-              </div>
-              <p className="border-t border-line px-4 py-2.5 text-sm text-muted">{vehicle.note}</p>
-            </Card>
-          )}
-          <Card>
-            <CardHeader title="Caractéristiques" />
-            <dl className="grid grid-cols-2 gap-3 px-5 pb-5 text-sm">
-              {[
-                ["Marque", a.brand],
-                ["Modèle", a.model],
-                ["Tonnage", a.tonnage],
-                ["Palettes", a.pallets],
-                ["Kilométrage", a.mileage ? `${nf(a.mileage)} km` : null],
-                ["Affecté à", a.assigned_to],
-              ].map(([k, v]) => (
-                <div key={String(k)}>
-                  <dt className="text-xs text-muted">{k}</dt>
-                  <dd className="font-medium">{v || "–"}</dd>
-                </div>
-              ))}
-            </dl>
-            <div className="grid gap-2 border-t border-line px-5 py-4 text-sm">
-              {[
-                ["Contrôle technique", a.ct_due],
-                ["Entretien", a.service_due],
-                ["Assurance", a.insurance_due],
-              ].map(([k, d]) => (
-                <div key={k} className="flex items-center justify-between gap-2">
-                  <span className="text-muted">{k}</span>
-                  <DueBadge d={d} />
-                </div>
-              ))}
-            </div>
-            {a.note && <p className="border-t border-line px-5 py-4 text-sm whitespace-pre-wrap">{a.note}</p>}
-          </Card>
-          <HistoryCardClient entries={audit} />
-        </div>
+        <HistoryCardClient entries={audit} />
       </div>
       <EntityForm open={ed.open} onClose={ed.close} title={`Modifier ${a.name}`} table="assets" id={a.id} initial={assetInitial(a)} fields={ASSET_FIELDS} />
       <RepairForm open={rep.open} onClose={rep.close} row={null} assets={assets} defaultAsset={a.id} />
