@@ -27,4 +27,4 @@ export const EMPLOYEE_FIELDS: FieldDef[] = [
 export const employeeInitial = (e: Employee | null): Record<string, unknown> =>
   e
     ? { ...e }
-    : { team: "chauf", freelance: false, cp_annual: 25, cp_carryover: 0, rtt_annual: 10, rec_due: 0, active: true, sort_order: 0 };
+    : { team: "chauf", freelance: false, cp_annual: 25, cp_carryover: 0, rtt_annual: 0, rec_due: 0, active: true, sort_order: 0 };

@@ -108,6 +108,8 @@ export const TABLE_LABELS: Record<string, string> = {
   tasks: "To do list",
   equipment_items: "Équipement",
   equipment_issues: "Dotation",
+  qualification_types: "Type de qualification",
+  qualifications: "Qualification",
   settings: "Réglages",
 };
 

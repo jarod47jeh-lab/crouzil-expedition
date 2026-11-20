@@ -34,6 +34,8 @@ const SCHEMA: Record<string, Record<string, Kind>> = {
   },
   equipment_items: { name: "text", category: "text", norm: "text", sized: "text", qty_per_person: "int", renewal_months: "int", teams: "list", position: "int", active: "bool" },
   equipment_issues: { employee_id: "uuid", item_id: "uuid", size: "text", qty: "int", issued_on: "date", signed: "bool", returned_on: "date", note: "text" },
+  qualification_types: { name: "text", category: "text", validity_months: "int", teams: "list", required: "bool", position: "int", active: "bool" },
+  qualifications: { employee_id: "uuid", type_id: "uuid", obtained_on: "date", expires_on: "date", provider: "text", reference: "text", note: "text" },
   tasks: { title: "text", section: "text", notes: "text", due_date: "date", assignee: "text", position: "int" },
 };
 
@@ -55,6 +57,8 @@ const PATHS: Record<string, string[]> = {
   tasks: ["/taches", "/"],
   equipment_items: ["/equipements"],
   equipment_issues: ["/equipements", "/equipe"],
+  qualification_types: ["/qualifications"],
+  qualifications: ["/qualifications", "/equipe"],
   settings: ["/reglages", "/conges", "/reparations", "/erreurs", "/"],
 };
 

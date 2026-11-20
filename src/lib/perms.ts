@@ -35,6 +35,8 @@ export const TABLE_MODULE: Record<string, ModuleKey | "any"> = {
   tasks: "taches",
   equipment_items: "equipe",
   equipment_issues: "equipe",
+  qualification_types: "equipe",
+  qualifications: "equipe",
   announcements: "any",
 };
 

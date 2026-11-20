@@ -32,7 +32,7 @@ export function RepairForm({ open, onClose, row, assets, defaultAsset, onSaved }
       }}
       validate={(v) => (!v.asset_id && !String(v.label || "").trim() ? "Choisissez un véhicule ou un matériel, ou donnez un libellé." : null)}
       fields={[
-        { name: "asset_id", label: "Véhicule ou matériel", type: "select", full: true, options: opts, hint: "Laissez vide pour un matériel hors parc, puis donnez un libellé." },
+        { name: "asset_id", label: "Véhicule ou matériel", type: "select", full: true, options: opts, hint: "Absent de la liste ? Ajoutez-le avec « Nouveau matériel » sur la page Réparations, ou laissez vide et donnez un libellé." },
         { name: "label", label: "Libellé", full: true, when: (v) => !v.asset_id, placeholder: "Ex. Hayon arrière quai 2" },
         { name: "category", label: "Type de problème", type: "select", required: true, options: REPAIR_CATS },
         { name: "urgency", label: "Urgence", type: "select", required: true, options: URGENCIES },

@@ -17,6 +17,7 @@ import type { DepotStaff, DepotSummary, DepotVehicle, ZoneId } from "./summary";
 import { avatarOf, HAIR_COLORS, SKINS, TEAM_SHIRT } from "@/lib/domain/avatar";
 import { ZONE_META } from "./overview";
 import { DepotModel } from "./model";
+import DepotActivity from "./activity";
 
 export type Selection =
   | { type: "zone"; id: ZoneId }
@@ -1484,6 +1485,8 @@ export default function DepotScene({
             <Forklift path={[-85, 10, -30, 10]} />
           </>
         )}
+        {/* circulation, livraisons, chariots et préparateurs en mouvement */}
+        <DepotActivity dense={interactive} />
         {staff
           .filter((s) => s.present && spots.has(s.id))
           .map((s) => (

@@ -1,7 +1,7 @@
 import type { ModuleKey } from "@/lib/perms";
 import {
   Megaphone, LayoutDashboard, CalendarCheck2, Wrench, PackageX, NotebookPen, Users, Truck, Building2, History, Trash2, ShieldCheck, Settings2,
-  ListTodo, Sun, Warehouse, UsersRound, CheckSquare, HardHat, type LucideIcon,
+  ListTodo, Sun, Warehouse, UsersRound, CheckSquare, HardHat, Award, type LucideIcon,
 } from "lucide-react";
 
 export type Badge = "leaves" | "repairs" | "notes" | "tasks";
@@ -55,6 +55,7 @@ export const SPACES: Space[] = [
       { href: "/conges", label: "Planning et congés", icon: CalendarCheck2, badge: "leaves", module: "conges" },
       { href: "/equipe", label: "Collaborateurs", icon: Users, module: "equipe" },
       { href: "/equipements", label: "Tenues et équipements", icon: HardHat, module: "equipe" },
+      { href: "/qualifications", label: "Qualifications et formations", icon: Award, module: "equipe" },
     ],
   },
   {

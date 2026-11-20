@@ -22,6 +22,10 @@ import { sortRepairs } from "@/lib/domain/repairs";
 import type { Asset, Repair, Settings } from "@/lib/types";
 import { cn, nf } from "@/lib/utils";
 import { RepairForm } from "./shared";
+import { EntityForm as AssetEntityForm } from "@/components/ui/entity-form";
+import { ASSET_FIELDS } from "../parc/fields";
+import { useEffect, useState as useStateR } from "react";
+import { PackagePlus } from "lucide-react";
 
 const ST_COLOR: Record<string, string> = { A: "#C26A00", T: "#2F6FDE", V: "#1F8A43", R: "#CE0013", F: "#8B8285", X: "#B5ABAD" };
 const CAT_COLOR = ["#CE0013", "#E8590C", "#B7791F", "#6B4FC8", "#2F6FDE", "#6B7588"];
@@ -30,6 +34,16 @@ export function RepairsView({ tab, repairs, assets, settings }: { tab: string; r
   const ed = useEditor<Repair>();
   useOpenOnNew(ed.create);
   const router = useRouter();
+  // nouveau matériel : formulaire, puis proposition de déclarer tout de suite une réparation dessus
+  const [assetForm, setAssetForm] = useStateR(false);
+  const [newAsset, setNewAsset] = useStateR<string | null>(null);
+  const [repairFor, setRepairFor] = useStateR<string | null>(null);
+  useEffect(() => {
+    if (!newAsset || !assets.some((a) => a.id === newAsset)) return;
+    const a = assets.find((x) => x.id === newAsset)!;
+    setNewAsset(null);
+    toast.success(`${a.name} ajouté au parc`, { description: "Vous pouvez déclarer une réparation dessus.", action: { label: "Déclarer", onClick: () => setRepairFor(a.id) }, duration: 8000 });
+  }, [assets, newAsset]);
   const open = repairs.filter((r) => REPAIR_OPEN.includes(r.status));
   const toSend = open.filter((r) => r.status === "A");
   return (
@@ -39,11 +53,18 @@ export function RepairsView({ tab, repairs, assets, settings }: { tab: string; r
         icon={<Wrench className="h-6 w-6" />}
         subtitle="Pannes et casses des véhicules et du matériel"
         actions={
-          <CanWrite module="reparations">
-          <Button onClick={ed.create}>
-            <Plus className="h-4 w-4" /> Nouvelle demande
-          </Button>
-          </CanWrite>
+          <>
+            <CanWrite module="parc">
+              <Button variant="outline" onClick={() => setAssetForm(true)}>
+                <PackagePlus className="h-4 w-4" /> Nouveau matériel
+              </Button>
+            </CanWrite>
+            <CanWrite module="reparations">
+              <Button onClick={ed.create}>
+                <Plus className="h-4 w-4" /> Nouvelle demande
+              </Button>
+            </CanWrite>
+          </>
         }
       />
       <Tabs
@@ -59,6 +80,19 @@ export function RepairsView({ tab, repairs, assets, settings }: { tab: string; r
       {tab === "list" && <List repairs={repairs} onEdit={ed.edit} />}
       {tab === "send" && <ToSend repairs={toSend} settings={settings} />}
       <RepairForm open={ed.open} onClose={ed.close} row={ed.row} assets={assets} onSaved={(id) => !ed.row && router.push(`/reparations/${id}`)} />
+      <AssetEntityForm
+        open={assetForm}
+        onClose={() => setAssetForm(false)}
+        title="Nouveau matériel"
+        table="assets"
+        initial={{ kind: "TRP", active: true }}
+        fields={ASSET_FIELDS}
+        onSaved={(id) => {
+          setNewAsset(id);
+          router.refresh();
+        }}
+      />
+      <RepairForm open={!!repairFor} onClose={() => setRepairFor(null)} row={null} assets={assets} defaultAsset={repairFor || undefined} />
     </>
   );
 }
