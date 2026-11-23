@@ -1,5 +1,5 @@
 "use client";
-import { Download, FileSpreadsheet, FileText } from "lucide-react";
+import { Download, FileSpreadsheet, FileText, FileType2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,11 +9,23 @@ import { buildCongesWorkbook, customPeriod, monthPeriod, yearPeriod, type Conges
 import { buildTeamWorkbook } from "@/lib/exports/team";
 import { downloadWorkbook, type ExportKind } from "@/lib/exports/workbook";
 import { MONTHS } from "@/lib/domain/dates";
+import { downloadCongesPdf } from "@/lib/exports/conges-pdf";
+
+type Format = ExportKind | "pdf";
 import { cn } from "@/lib/utils";
 
-function Formats({ busy, onPick }: { busy: ExportKind | null; onPick: (k: ExportKind) => void }) {
+function Formats({ busy, onPick, pdf }: { busy: Format | null; onPick: (k: Format) => void; pdf?: boolean }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className={cn("grid gap-2", pdf ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+      {pdf && (
+        <button type="button" disabled={!!busy} onClick={() => onPick("pdf")} className="flex items-start gap-3 rounded-2xl border border-line p-3 text-left transition-colors hover:border-brand/50 disabled:opacity-60">
+          <FileType2 className="mt-0.5 h-5 w-5 shrink-0 text-bad" />
+          <span>
+            <span className="block font-semibold">{busy === "pdf" ? "Préparation…" : "PDF paysage"}</span>
+            <span className="text-xs text-muted">À lire ou imprimer : indicateurs, planning coloré (un mois par page), demandes, soldes</span>
+          </span>
+        </button>
+      )}
       <button type="button" disabled={!!busy} onClick={() => onPick("xlsx")} className="flex items-start gap-3 rounded-2xl border border-line p-3 text-left transition-colors hover:border-brand/50 disabled:opacity-60">
         <FileSpreadsheet className="mt-0.5 h-5 w-5 shrink-0 text-ok" />
         <span>
@@ -63,7 +75,7 @@ export function TeamExportButton({ label = "Exporter" }: { label?: string }) {
             <li>• Collaborateurs (fiche complète et soldes {year}), tailles</li>
             <li>• État des dotations, besoins de commande par taille, historique, catalogue</li>
           </ul>
-          <Formats busy={busy} onPick={go} />
+          <Formats busy={busy} onPick={(k) => k !== "pdf" && go(k)} />
         </div>
       </Dialog>
     </>
@@ -73,17 +85,19 @@ export function TeamExportButton({ label = "Exporter" }: { label?: string }) {
 /** Export « Planning et congés » : mois affiché, année ou période libre */
 export function CongesExportButton({ year, month, ...data }: Omit<CongesExportData, "from" | "to" | "label"> & { year: number; month: number }) {
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState<ExportKind | null>(null);
+  const [busy, setBusy] = useState<Format | null>(null);
   const [mode, setMode] = useState<"mois" | "annee" | "libre">("mois");
   const [a, setA] = useState(`${year}-${String(month + 1).padStart(2, "0")}-01`);
   const [b, setB] = useState(`${year}-${String(month + 1).padStart(2, "0")}-${new Date(year, month + 1, 0).getDate()}`);
-  const go = async (kind: ExportKind) => {
+  const go = async (kind: Format) => {
     if (mode === "libre" && (!a || !b || a > b)) return void toast.error("Choisissez une période valide.");
     const p = mode === "mois" ? monthPeriod(year, month) : mode === "annee" ? yearPeriod(year) : customPeriod(a, b);
     setBusy(kind);
     try {
       const slug = mode === "mois" ? `${year}-${String(month + 1).padStart(2, "0")}` : mode === "annee" ? String(year) : `${a}_${b}`;
-      await downloadWorkbook(`planning-conges-${slug}`, buildCongesWorkbook({ ...data, ...p }), kind, false);
+      const sheets = buildCongesWorkbook({ ...data, ...p });
+      if (kind === "pdf") await downloadCongesPdf(`planning-conges-${slug}`, sheets, p.label);
+      else await downloadWorkbook(`planning-conges-${slug}`, sheets, kind, false);
       toast.success("Export prêt", { description: "Le fichier est dans vos téléchargements." });
       setOpen(false);
     } catch (e) {
@@ -102,7 +116,7 @@ export function CongesExportButton({ year, month, ...data }: Omit<CongesExportDa
       <Button variant="outline" onClick={() => setOpen(true)}>
         <Download className="h-4 w-4" /> Exporter
       </Button>
-      <Dialog open={open} onClose={() => setOpen(false)} title="Exporter le planning et les congés" subtitle="Excel ou CSV, avec les indicateurs de la période">
+      <Dialog open={open} onClose={() => setOpen(false)} title="Exporter le planning et les congés" subtitle="PDF, Excel ou CSV, avec les indicateurs de la période" wide>
         <div className="grid gap-4">
           <div>
             <p className="mb-1.5 text-[13px] font-semibold">Période</p>
@@ -122,7 +136,7 @@ export function CongesExportButton({ year, month, ...data }: Omit<CongesExportDa
             <li>• <b className="text-ink">Indicateurs</b> : jours d&apos;absence, taux d&apos;absence et d&apos;absentéisme, par équipe, par motif et par mois, pic d&apos;absents, jours au-dessus du seuil, demandes, freelances</li>
             <li>• Planning jour par jour (codes CP, RTT, MAL…), détail des absences, demandes, soldes {year}</li>
           </ul>
-          <Formats busy={busy} onPick={go} />
+          <Formats busy={busy} onPick={go} pdf />
         </div>
       </Dialog>
     </>
