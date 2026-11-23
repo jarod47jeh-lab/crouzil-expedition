@@ -40,7 +40,7 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
   const count = (s: Space) => s.items.reduce((n, i) => n + (i.badge ? badges[i.badge] : 0), 0);
 
   const nav = (
-    <nav className="flex flex-col gap-4 px-3 pb-4" aria-label="Menu principal">
+    <nav className="flex flex-col gap-6 px-3 pb-4" aria-label="Menu principal">
       {spaces.map((s) => (
         <SpaceGroup key={s.key} s={s} path={path} badges={badges} />
       ))}
@@ -50,9 +50,9 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
 
   const brand = (
     <Link href="/" className="flex items-center gap-3 px-5 pt-5 pb-4">
-      <Logo className="h-11 w-11 shrink-0 drop-shadow-sm" />
+      <Logo className="h-10 w-10 shrink-0" />
       <div className="min-w-0">
-        <p className="font-display text-[17px] leading-tight font-extrabold tracking-tight">Espace Expédition</p>
+        <p className="font-display text-base leading-tight font-medium">Espace Expédition</p>
         <p className="text-xs text-muted">Crouzil Boissons · Ayguesvives</p>
       </div>
     </Link>
@@ -78,7 +78,7 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
               initial={{ x: -310 }}
               animate={{ x: 0 }}
               exit={{ x: -310 }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="flex items-center justify-between pr-3">
                 {brand}
@@ -106,14 +106,14 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
             </Link>
             <button
               onClick={() => setCmd(true)}
-              className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-xl border border-line bg-surface px-3 text-sm text-muted transition-colors hover:border-brand/40 sm:max-w-md"
+              className="flex h-10 min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 text-sm text-muted transition-colors hover:border-ink/20 sm:max-w-md"
             >
               <Search className="h-4 w-4 shrink-0" />
               <span className="truncate">
-                <span className="sm:hidden">Rechercher…</span>
+                <span className="sm:hidden">Rechercher</span>
                 <span className="hidden sm:inline">Chercher un collaborateur, un client, un véhicule…</span>
               </span>
-              <kbd className="ml-auto hidden rounded-md border border-line bg-surface-2 px-1.5 text-[11px] font-semibold sm:inline">Ctrl K</kbd>
+              <kbd className="tabular ml-auto hidden rounded border border-line bg-surface-2 px-1.5 text-[11px] sm:inline">Ctrl K</kbd>
             </button>
             <div className="ml-auto flex items-center gap-1.5">
               <QuickCreateButton />
@@ -134,12 +134,12 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
                     key={i.href}
                     href={i.href}
                     className={cn(
-                      "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
+                      "flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium transition-colors",
                       on ? "border-ink bg-ink text-bg" : "border-line bg-surface text-muted",
                     )}
                   >
                     {i.label}
-                    {n > 0 && <span className={cn("rounded-full px-1.5 text-[10px] leading-4", on ? "bg-bg text-ink" : "bg-brand text-brand-ink")}>{n}</span>}
+                    {n > 0 && <span className={cn("tabular text-xs", on ? "text-bg/70" : "text-brand")}>{n}</span>}
                   </Link>
                 );
               })}
@@ -164,7 +164,7 @@ export function Shell({ children, user, badges }: { children: React.ReactNode; u
           const n = count(s);
           return (
             <Link key={s.key} href={s.items[0].href} className={cn("relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-semibold", on ? "text-brand" : "text-muted")}>
-              {on && <motion.span layoutId="tab-on" className="absolute top-0 h-[3px] w-10 rounded-b-full bg-brand" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
+              {on && <motion.span layoutId="tab-on" className="absolute top-0 h-[3px] w-10 rounded-b-full bg-brand" transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }} />}
               <span className="relative">
                 <s.icon className="h-[22px] w-[22px]" strokeWidth={on ? 2.2 : 1.8} />
                 {n > 0 && <span className="absolute -top-1.5 -right-2.5 min-w-4 rounded-full bg-brand px-1 text-center text-[10px] leading-4 text-brand-ink">{n}</span>}
@@ -188,12 +188,12 @@ function NavLink({ i, path, badges, layout }: { i: NavItem; path: string; badges
       <Link
         href={i.href}
         aria-current={active ? "page" : undefined}
-        className={cn("relative flex h-10 items-center gap-3 rounded-xl px-3 text-[14px] font-medium transition-colors", active ? "text-brand" : "text-muted hover:bg-surface-2 hover:text-ink")}
+        className={cn("relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-sm transition-colors", active ? "text-brand" : "text-muted hover:bg-surface-2 hover:text-ink")}
       >
-        {active && <motion.span layoutId={layout} className="absolute inset-0 rounded-xl bg-brand/8" transition={{ type: "spring", stiffness: 500, damping: 40 }} />}
-        <i.icon className="relative h-[18px] w-[18px]" />
-        <span className={cn("relative flex-1 truncate", active && "font-semibold")}>{i.label}</span>
-        {n > 0 && <span className="relative rounded-full bg-brand px-1.5 text-[11px] leading-5 font-bold text-brand-ink">{n}</span>}
+        {active && <motion.span layoutId={layout} className="absolute inset-0 rounded-lg bg-brand/8" transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }} />}
+        <i.icon className="relative h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+        <span className={cn("relative flex-1 truncate", active && "font-medium")}>{i.label}</span>
+        {n > 0 && <span className="tabular relative rounded-md bg-brand/10 px-1.5 text-xs leading-5 text-brand">{n}</span>}
       </Link>
     </li>
   );
@@ -202,7 +202,7 @@ function NavLink({ i, path, badges, layout }: { i: NavItem; path: string; badges
 function SpaceGroup({ s, path, badges }: { s: Space; path: string; badges: Badges }) {
   return (
     <div>
-      <p className="mb-1 flex items-center gap-2 px-3 text-[11px] font-bold tracking-[0.09em] text-muted/80 uppercase">
+      <p className="mb-2 flex items-center gap-2 px-3 text-xs text-muted">
         <s.icon className="h-3.5 w-3.5" /> {s.title}
       </p>
       <ul className="grid gap-0.5">
@@ -222,7 +222,7 @@ function AdminGroup({ path }: { path: string }) {
   }, [inside]);
   return (
     <div className="border-t border-line pt-3">
-      <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-center gap-2 rounded-lg px-3 py-1 text-[11px] font-bold tracking-[0.09em] text-muted/80 uppercase hover:text-ink">
+      <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-center gap-2 rounded-lg px-3 py-1 text-xs text-muted/80 hover:text-ink">
         <ADMIN.icon className="h-3.5 w-3.5" /> {ADMIN.title}
         <ChevronDown className={cn("ml-auto h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
       </button>
@@ -241,11 +241,11 @@ function AdminGroup({ path }: { path: string }) {
 
 function UserBox({ user }: { user: { name: string; email: string } }) {
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-line bg-bg p-2">
-      <Link href="/compte" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl p-1 hover:bg-surface-2">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand font-bold text-brand-ink">{(user.name || user.email).charAt(0).toUpperCase()}</span>
+    <div className="flex items-center gap-2 rounded-xl border border-line bg-bg p-2">
+      <Link href="/compte" className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg p-1 hover:bg-surface-2">
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-surface-2 font-medium text-ink">{(user.name || user.email).charAt(0).toUpperCase()}</span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold">{user.name}</span>
+          <span className="block truncate text-sm font-medium">{user.name}</span>
           <span className="block truncate text-xs text-muted">{user.email}</span>
         </span>
       </Link>
@@ -272,7 +272,7 @@ function ThemeToggle() {
   return (
     <button onClick={toggle} className="hidden h-10 w-10 place-items-center rounded-xl text-muted hover:bg-surface-2 hover:text-ink sm:grid" aria-label="Changer de thème">
       <AnimatePresence mode="wait" initial={false}>
-        <motion.span key={String(dark)} initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}>
+        <motion.span key={String(dark)} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
           {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </motion.span>
       </AnimatePresence>

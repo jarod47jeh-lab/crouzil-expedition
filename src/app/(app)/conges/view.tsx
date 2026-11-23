@@ -22,7 +22,7 @@ import { LEAVE_COLOR, LEAVE_LABEL, LEAVE_STATUS, LEAVE_TYPES, TEAM_ORDER, TEAMS,
 import { absencePeriods, absencesOn, balances, requestDays, type AbsencePeriod } from "@/lib/domain/conges";
 import { DAYS_SHORT, MONTHS, addDays, fmtDate, fmtLong, fmtShort, isHoliday, isWorkDay, iso, nextWorkDay, parse, prevWorkDay, today } from "@/lib/domain/dates";
 import type { DayMark, Employee, FreelanceCall, LeaveRequest, LeaveType, Settings, Team } from "@/lib/types";
-import { cn, nf } from "@/lib/utils";
+import { cn, nf, plural } from "@/lib/utils";
 import { LeaveForm } from "./leave-form";
 import { CellEditor } from "./cell-editor";
 
@@ -143,7 +143,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
         <Button variant="outline" size="icon" onClick={() => go(nextWorkDay(d))} aria-label="Jour suivant">
           <ChevronRight className="h-4 w-4" />
         </Button>
-        <p className="font-display text-lg font-bold">{fmtLong(d)}</p>
+        <p className="font-display text-lg font-medium">{fmtLong(d)}</p>
         {!isWorkDay(d) && <Badge tone="warn">{isHoliday(d) ? "Jour férié" : "Week-end"}</Badge>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 text-sm font-semibold">
@@ -170,8 +170,8 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
           const on = svc === x.g;
           return (
             <button key={x.g} onClick={() => choose(on ? "all" : x.g)} aria-pressed={on} className={cn("rounded-2xl border bg-surface p-3 text-left transition-colors", on ? "border-brand ring-1 ring-brand" : "border-line hover:border-brand/40")}>
-              <p className="text-[12px] font-semibold tracking-wide text-muted uppercase">{TEAMS[x.g]}</p>
-              <p className="mt-1 flex items-baseline gap-1 font-display text-2xl font-bold">
+              <p className="text-xs font-medium text-muted">{TEAMS[x.g]}</p>
+              <p className="tabular mt-1 flex items-baseline gap-1 text-2xl font-medium">
                 {x.fixed.length - x.nAbs}
                 <span className="text-sm text-muted">/ {x.fixed.length} présents</span>
               </p>
@@ -179,7 +179,7 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
                 {x.fixed.slice(0, 7).map((e) => (
                   <Avatar key={e.id} e={e} size={24} dim={!!absOf(e.id) && !absOf(e.id)!.pending} className="ring-2 ring-surface" />
                 ))}
-                {x.fixed.length > 7 && <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-[10px] font-bold ring-2 ring-surface">+{x.fixed.length - 7}</span>}
+                {x.fixed.length > 7 && <span className="grid h-6 w-6 place-items-center rounded-full bg-surface-2 text-[10px] font-semibold ring-2 ring-surface">+{x.fixed.length - 7}</span>}
               </div>
               {over && <p className="mt-1 text-xs font-semibold text-bad">Seuil de {x.max} absents dépassé</p>}
             </button>
@@ -195,8 +195,8 @@ function DayTab({ day, employees, leaves, marks, calls, settings }: Props) {
             <Card key={g}>
               <CardHeader
                 title={TEAMS[g]}
-                subtitle={`${fixed.length - nAbs} présent(s) sur ${fixed.length}`}
-                actions={max != null && nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone={nAbs ? "warn" : "ok"}>{nAbs} absent(s)</Badge>}
+                subtitle={`${plural(fixed.length - nAbs, "présent")} sur ${fixed.length}`}
+                actions={max != null && nAbs > max ? <Badge tone="bad"><AlertTriangle className="h-3.5 w-3.5" /> {nAbs} absents, seuil {max}</Badge> : <Badge tone={nAbs ? "warn" : "ok"}>{plural(nAbs, "absent")}</Badge>}
               />
               <ul className="divide-y divide-line">
                 {fixed.map((e, i) => {
@@ -322,14 +322,14 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
         <Button variant="outline" size="icon" onClick={() => go(year, month - 1)} aria-label="Mois précédent">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <p className="min-w-[150px] text-center font-display text-lg font-bold">
+        <p className="min-w-[150px] text-center font-display text-lg font-medium">
           {MONTHS[month]} {year}
         </p>
         <Button variant="outline" size="icon" onClick={() => go(year, month + 1)} aria-label="Mois suivant">
           <ChevronRight className="h-4 w-4" />
         </Button>
         {canEdit && <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-semibold text-muted">
+          <span className="mr-1 inline-flex items-center gap-1.5 text-xs font-medium text-muted">
             <Paintbrush className="h-3.5 w-3.5" /> Saisie rapide :
           </span>
           {[["PRES", "Présent", "var(--line)"] as const, ...LEAVE_TYPES.map((t) => [t.k, t.k, t.color] as const)].map(([k, l, c]) => (
@@ -337,7 +337,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
               key={k}
               onClick={() => setBrush((b) => (b === k ? null : k))}
               title={k === "PRES" ? "Présent (efface)" : LEAVE_LABEL[k as LeaveType]}
-              className={cn("rounded-lg border px-2 py-1 text-xs font-bold transition-all", brush === k ? "scale-105 border-ink shadow" : "border-transparent opacity-80 hover:opacity-100")}
+              className={cn("rounded-lg border px-2 py-1 text-xs font-semibold transition-[color,background-color,border-color,opacity,transform]", brush === k ? "border-ink" : "border-transparent opacity-80 hover:opacity-100")}
               style={{ background: `color-mix(in srgb, ${c} 22%, transparent)`, color: k === "PRES" ? "var(--ink)" : c }}
             >
               {l}
@@ -376,7 +376,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
               return (
                 <tbody key={g}>
                   <tr>
-                    <td colSpan={days.length + 1} className="sticky left-0 bg-surface px-3 pt-3 pb-1 text-[11px] font-bold tracking-wide text-muted uppercase">
+                    <td colSpan={days.length + 1} className="sticky left-0 bg-surface px-3 pt-3 pb-1 text-xs text-muted">
                       {TEAMS[g]}
                     </td>
                   </tr>
@@ -394,7 +394,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
                           const on = calls.some((c) => c.employee_id === e.id && c.date === iso(d) && c.triggered);
                           return (
                             <td key={d.getDate()} className="p-0.5 text-center">
-                              {on && <span className="block rounded bg-ok/20 text-[10px] font-bold text-ok">Déc</span>}
+                              {on && <span className="block rounded bg-ok/20 text-[10px] font-semibold text-ok">Déc</span>}
                             </td>
                           );
                         }
@@ -404,7 +404,7 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
                             <button
                               onClick={() => paint(e, d)}
                               title={c ? `${LEAVE_LABEL[c.type]}${c.pending ? " (en attente)" : ""}` : "Présent"}
-                              className={cn("block h-6 w-full rounded-md text-[10px] font-bold transition-transform", brush ? "cursor-crosshair hover:scale-110" : "cursor-pointer hover:ring-2 hover:ring-brand/40", !c && "hover:bg-surface-2")}
+                              className={cn("block h-6 w-full rounded-md text-[10px] font-semibold transition-transform", brush ? "cursor-crosshair" : "cursor-pointer hover:ring-2 hover:ring-brand/40", !c && "hover:bg-surface-2")}
                               style={
                                 c
                                   ? c.pending
@@ -421,12 +421,12 @@ function PlanningTab({ year, month, employees, leaves, marks, calls, settings, o
                     </tr>
                   ))}
                   <tr className="border-t border-line bg-surface-2/40">
-                    <td className="sticky left-0 z-10 bg-surface-2 px-3 py-1 text-[11px] font-semibold text-muted">{max != null ? `Absents (seuil ${max})` : "Absents"}</td>
+                    <td className="sticky left-0 z-10 bg-surface-2 px-3 py-1 text-xs text-muted">{max != null ? `Absents (seuil ${max})` : "Absents"}</td>
                     {days.map((d) => {
                       if (!isWorkDay(d)) return <td key={d.getDate()} />;
                       const n = absentCount(d, g);
                       return (
-                        <td key={d.getDate()} className={cn("text-center text-[11px] font-bold", max != null && n > max ? "text-bad" : n ? "text-ink" : "text-muted/50")}>
+                        <td key={d.getDate()} className={cn("text-center text-[11px] font-semibold", max != null && n > max ? "text-bad" : n ? "text-ink" : "text-muted/50")}>
                           {n}
                         </td>
                       );
@@ -467,7 +467,7 @@ function RequestsTab({ employees, leaves, onEdit }: Props & { onEdit: (r: LeaveR
     <div className="grid gap-6">
       {pending.length > 0 && (
         <Card>
-          <CardHeader title="À valider" subtitle={`${pending.length} demande(s) en attente`} />
+          <CardHeader title="À valider" subtitle={`${plural(pending.length, "demande")} en attente`} />
           <ul className="grid gap-3 px-5 pb-5 sm:grid-cols-2 xl:grid-cols-3">
             {pending.map((r, i) => (
               <motion.li
@@ -567,7 +567,7 @@ function BalancesTab({ year, employees, leaves, marks }: Props) {
         <Button variant="outline" size="icon" onClick={() => router.push(`/conges?tab=soldes&y=${year - 1}`)} aria-label="Année précédente">
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <p className="font-display text-lg font-bold">{year}</p>
+        <p className="font-display text-lg font-medium">{year}</p>
         <Button variant="outline" size="icon" onClick={() => router.push(`/conges?tab=soldes&y=${year + 1}`)} aria-label="Année suivante">
           <ChevronRight className="h-4 w-4" />
         </Button>
@@ -594,7 +594,7 @@ function BalancesTab({ year, employees, leaves, marks }: Props) {
                   data={used.map((t) => ({ name: t.label, value: byType[t.k], color: t.color }))}
                   center={
                     <div>
-                      <p className="font-display text-2xl font-bold">{total}</p>
+                      <p className="tabular text-2xl font-medium">{total}</p>
                       <p className="text-xs text-muted">jours</p>
                     </div>
                   }

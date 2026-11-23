@@ -23,7 +23,7 @@ import { MONTHS, fmtDate, fmtDateTime, iso, isWorkDay, parse, weekStart } from "
 import { conformity, errorKeys, originGroup } from "@/lib/domain/errors";
 import { MONTHS_SHORT } from "@/lib/domain/constants-ext";
 import type { Client, DeliveryError, Justification, Settings } from "@/lib/types";
-import { cn, nf, pct } from "@/lib/utils";
+import { cn, nf, pct, plural } from "@/lib/utils";
 import { JustificationDialog } from "./justification";
 
 interface Props {
@@ -178,7 +178,7 @@ function Dashboard({ errors, volumes, settings, inPeriod, label, justifs }: Prop
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card className="p-5">
           <div className="mb-3 flex items-center justify-between gap-2">
-            <h2 className="text-[17px] font-bold">Conformité, {label}</h2>
+            <h2 className="text-base font-medium">Conformité, {label}</h2>
             <Badge tone="muted">Objectif {nf(target)} %</Badge>
           </div>
           {conf ? (
@@ -189,8 +189,8 @@ function Dashboard({ errors, volumes, settings, inPeriod, label, justifs }: Prop
                   <div className="absolute inset-0 grid place-items-center text-center">
                     <div>
                       <I className="mx-auto mb-0.5 h-4 w-4 text-muted" />
-                      <p className={cn("font-display text-xl font-bold", v >= target ? "text-ok" : "text-bad")}>{pct(v, 2)}</p>
-                      <p className="text-[11px] font-semibold text-muted uppercase">{l}</p>
+                      <p className={cn("tabular text-xl font-medium", v >= target ? "text-ok" : "text-bad")}>{pct(v, 2)}</p>
+                      <p className="text-xs text-muted">{l}</p>
                     </div>
                   </div>
                 </motion.div>
@@ -201,7 +201,7 @@ function Dashboard({ errors, volumes, settings, inPeriod, label, justifs }: Prop
           )}
           {conf && (
             <p className="mt-2 text-center text-xs text-muted">
-              {conf.errors} erreur(s) sur {nf(conf.deliveries)} livraisons ({conf.days} jours renseignés). Sous {nf(target)} %, l&apos;objectif n&apos;est pas tenu.
+              {plural(conf.errors, "erreur")} sur {nf(conf.deliveries)} livraisons ({conf.days} jours renseignés). Sous {nf(target)} %, l&apos;objectif n&apos;est pas tenu.
             </p>
           )}
         </Card>
@@ -306,7 +306,7 @@ function List({ errors, justifs, clients, inPeriod, onEdit }: Props & { inPeriod
             sort: (e) => jLabel(e).label,
             exportValue: (e) => jLabel(e).label,
             cell: (e) => (
-              <button onClick={() => setJ(e)} className="transition-transform hover:scale-105">
+              <button onClick={() => setJ(e)} className="transition-transform">
                 <Badge tone={jLabel(e).tone} dot>{jLabel(e).label}</Badge>
               </button>
             ),
@@ -335,7 +335,7 @@ function ImportTab({ volumes, errors }: Props) {
         date: /^DATE/, client_name: /^CLIENT/, route: /^TOURN/, driver: /^CHAUFFEUR/, goods: /^MARCHANDISE/, qty: /^(QT|QUANTIT)/, packaging: /^TYPE DE MARCH/,
         error_type: /^TYPE D.ERREUR/, origin: /^ORIGINE/, picker: /^PR[ÉE]PARATEUR/, other_resp: /^RESPONSABLE/, comment: /^COMMENTAIRE/,
       };
-      const clean = (x: unknown) => (x == null ? "" : String(x).replace(/\s+/g, " ").trim());
+      const clean = (x: unknown) => (x == null ? "" : String(x).replace(/\s+/g, "").trim());
       const day = (d: Date) => iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + (d.getHours() > 12 ? 1 : 0)));
       const raw: Omit<ImportedError, "import_key">[] = [];
       for (const n of wb.SheetNames) {
@@ -377,7 +377,7 @@ function ImportTab({ volumes, errors }: Props) {
       if (!preview) return;
       const res = await importErrors(preview.rows, preview.volumes, preview.name);
       if (!res.ok) return void toast.error(res.error);
-      toast.success(`${res.data!.errors} erreurs importées, ${res.data!.clients} nouveau(x) client(s), ${res.data!.volumes} jour(s) de volumes`);
+      toast.success(`${res.data!.errors} erreurs importées, ${plural(res.data!.clients, "nouveau client", "nouveaux clients")}, ${plural(res.data!.volumes, "jour")} de volumes`);
       setPreview(null);
       router.refresh();
     });
@@ -461,7 +461,7 @@ function VolumesCard({ volumes }: { volumes: Record<string, number> }) {
       <div className="grid grid-cols-2 gap-2 px-5 pb-5 sm:grid-cols-4">
         {days.map((d) => (
           <label key={iso(d)} className="flex flex-col gap-1 rounded-xl border border-line p-2">
-            <span className="text-xs font-semibold text-muted">{d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" })}</span>
+            <span className="text-xs font-medium text-muted">{d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" })}</span>
             <input
               type="number"
               min={0}

@@ -27,7 +27,7 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
         <div className="grid gap-6">
           {[...days.entries()].map(([d, list]) => (
             <Card key={d} className="p-5">
-              <h2 className="mb-4 text-sm font-bold text-muted first-letter:uppercase">{d}</h2>
+              <h2 className="mb-4 text-sm font-medium text-muted first-letter:uppercase">{d}</h2>
               <ul className="ml-1 grid gap-4 border-l border-line pl-0">
                 {list.map((e) => (
                   <AuditItem key={e.id} e={e} showTable />

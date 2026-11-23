@@ -47,7 +47,7 @@ export function JustificationDialog({ error, justif, onClose }: { error: Deliver
       onClose={onClose}
       wide
       title="Justification de l'employé"
-      subtitle={`${fmtDate(error.date)} · ${error.client_name} · ${error.error_type} · Concerné : ${[error.picker, error.driver, error.other_resp].filter(Boolean).join(", ") || "non indiqué"}`}
+      subtitle={`${fmtDate(error.date)} · ${error.client_name} · ${error.error_type} · Concerné : ${[error.picker, error.driver, error.other_resp].filter(Boolean).join(", ") ||"non indiqué"}`}
       footer={
         <>
           {justif && canEdit && (

@@ -4,7 +4,10 @@
 
 @theme {
   --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-display: "Bricolage Grotesque Variable", "Segoe UI", system-ui, sans-serif;
+  /* une seule famille pour l interface, titres compris ; les chiffres en mono, comme sur une étiquette de palette */
+  --font-display: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -22,8 +25,8 @@
   --color-navy: var(--navy);
   --color-amber: var(--amber);
 
-  --shadow-card: 0 1px 2px rgb(20 10 12 / 0.04), 0 4px 16px -8px rgb(20 10 12 / 0.08);
-  --shadow-pop: 0 20px 60px -20px rgb(20 10 12 / 0.35), 0 2px 8px rgb(20 10 12 / 0.08);
+  --shadow-card: 0 1px 2px rgb(20 10 12 / 0.05);
+  --shadow-pop: 0 8px 24px rgb(20 10 12 / 0.08), 0 1px 2px rgb(20 10 12 / 0.05);
 }
 
 :root {
@@ -80,11 +83,14 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
+  font-weight: 500;
   text-wrap: balance;
 }
 
 .tabular {
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 
 ::selection {
@@ -117,13 +123,13 @@ h3 {
 .field {
   width: 100%;
   min-height: 2.5rem;
-  border-radius: 0.6rem;
+  border-radius: 0.5rem;
   border: 1px solid var(--line);
   background: var(--surface);
   color: var(--ink);
   padding: 0 0.75rem;
   font-size: 0.925rem;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s var(--ease-out), box-shadow 0.15s var(--ease-out);
 }
 textarea.field {
   padding: 0.6rem 0.75rem;

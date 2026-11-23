@@ -38,8 +38,8 @@ export function DepotTiles({ s, compact }: { s: DepotSummary; compact?: boolean 
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className={cn("font-semibold", compact ? "text-[12px] leading-tight" : "truncate text-[13.5px]")}>{m.name}</span>
-                  {z.alerts > 0 && <span className="rounded-full bg-bad px-1.5 text-[10px] leading-4 font-bold text-white">{z.alerts}</span>}
+                  <span className={cn("font-semibold", compact ? "text-xs leading-tight" : "truncate text-sm")}>{m.name}</span>
+                  {z.alerts > 0 && <span className="rounded-full bg-bad px-1.5 text-[10px] leading-4 font-semibold text-white">{z.alerts}</span>}
                 </span>
                 {!compact && (
                   <span className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">

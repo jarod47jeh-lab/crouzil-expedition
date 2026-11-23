@@ -40,21 +40,19 @@ export function Kpi({
   index?: number;
   children?: React.ReactNode;
 }) {
-  const color = { ink: "text-ink", ok: "text-ok", warn: "text-warn", bad: "text-bad", info: "text-info", brand: "text-brand", violet: "text-violet" }[tone];
-  const bg = { ink: "bg-surface-2 text-muted", ok: "bg-ok/12 text-ok", warn: "bg-warn/14 text-warn", bad: "bg-bad/12 text-bad", info: "bg-info/12 text-info", brand: "bg-brand/12 text-brand", violet: "bg-violet/12 text-violet" }[tone];
+  // Un chiffre ne prend de la couleur que s il signale quelque chose à traiter ; le reste reste à l encre.
+  const color = tone === "bad" ? "text-bad" : tone === "warn" ? "text-warn" : "text-ink";
+  void icon; // les cartes de chiffres restent des chiffres : pas de vignette décorative
   const body = (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.05 * index, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={href ? { y: -3 } : undefined}
-      className={cn("group relative h-full overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-card", href && "cursor-pointer hover:border-brand/40")}
+     
+      className={cn("group relative h-full overflow-hidden rounded-2xl border border-line bg-surface p-5 shadow-card transition-colors", href && "cursor-pointer hover:border-ink/20")}
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-[12.5px] font-semibold tracking-wide text-muted uppercase">{label}</p>
-        {icon && <span className={cn("grid h-9 w-9 place-items-center rounded-xl", bg)}>{icon}</span>}
-      </div>
-      <p className={cn("tabular mt-2 font-display text-[34px] leading-none font-bold", color)}>
+      <p className="text-[13px] text-muted">{label}</p>
+      <p className={cn("tabular mt-2 text-[32px] leading-none font-medium", color)}>
         {value == null ? "–" : <CountUp value={value} decimals={decimals} suffix={suffix} />}
       </p>
       {sub && <div className="mt-2 text-[13px] text-muted">{sub}</div>}

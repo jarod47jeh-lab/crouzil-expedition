@@ -104,7 +104,7 @@ export function NotesView({
           <div className="grid gap-8">
             {archiveGroups.map(([month, list]) => (
               <section key={month}>
-                <h2 className="mb-3 flex items-center gap-3 text-sm font-bold text-muted capitalize">
+                <h2 className="mb-3 flex items-center gap-3 text-sm font-medium text-muted capitalize">
                   {month}
                   <Badge tone="muted">{list.length}</Badge>
                   <span className="h-px flex-1 bg-line" />
@@ -139,7 +139,7 @@ export function NotesView({
             <div className="grid gap-8">
               {groups.map(([b, list]) => (
                 <section key={b}>
-                  <h2 className={cn("mb-3 flex items-center gap-3 text-sm font-bold", b === "late" ? "text-bad" : "text-muted")}>
+                  <h2 className={cn("mb-3 flex items-center gap-3 text-sm font-medium", b === "late" ? "text-bad" : "text-muted")}>
                     {BUCKETS[b]}
                     <Badge tone={b === "late" ? "bad" : "muted"}>{list.length}</Badge>
                     <span className="h-px flex-1 bg-line" />

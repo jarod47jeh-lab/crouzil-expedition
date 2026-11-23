@@ -23,7 +23,7 @@ import { appliesTo, qualStatus } from "@/lib/domain/qualifications";
 import { ZONE_META } from "@/components/depot/overview";
 import { zoneOfEmployee } from "@/components/depot/summary";
 import { TEAM_SHIRT } from "@/lib/domain/avatar";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import { nf } from "@/lib/utils";
 import { EMPLOYEE_FIELDS, employeeInitial } from "./fields";
 
@@ -116,22 +116,22 @@ export function EquipeView({ rows, year, qualTypes = [], quals = [], leaves = []
             return (
               <section key={g}>
                 <div className="mb-3 flex items-baseline gap-3 border-b-2 pb-1.5" style={{ borderColor: TEAM_SHIRT[g] }}>
-                  <h2 className="font-display text-lg font-bold">{TEAMS[g]}</h2>
-                  <span className="text-sm text-muted">{list.length} collaborateur(s) · {here} présent(s) aujourd&apos;hui</span>
+                  <h2 className="font-display text-lg font-medium">{TEAMS[g]}</h2>
+                  <span className="text-sm text-muted">{plural(list.length, "collaborateur")} · {plural(here, "présent")} aujourd&apos;hui</span>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
                   {list.map((r) => {
                     const abs = absent.get(r.id);
                     const al = alertsOf(r);
                     return (
-                      <Link key={r.id} href={`/equipe/${r.id}`} className={cn("group relative flex gap-3 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 transition-all hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-md", !r.active && "opacity-60")}>
+                      <Link key={r.id} href={`/equipe/${r.id}`} className={cn("group relative flex gap-3 overflow-hidden rounded-2xl border border-line bg-surface p-3.5 transition-[color,background-color,border-color,opacity,transform] hover:border-brand/40", !r.active && "opacity-60")}>
                         <span className="absolute inset-y-0 left-0 w-1" style={{ background: TEAM_SHIRT[r.team] }} />
                         <Avatar e={r} size={58} dim={!!abs} />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate font-display text-[16px] leading-tight font-bold group-hover:text-brand">{r.name}</p>
+                          <p className="truncate font-display text-base leading-tight font-medium group-hover:text-brand">{r.name}</p>
                           <p className="truncate text-[13px] text-muted">{r.job_title || TEAMS[r.team]} · {ZONE_META[zoneOfEmployee(r)].name}</p>
                           <div className="mt-1.5 flex flex-wrap gap-1">
-                            {abs ? <span className="rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: LEAVE_COLOR[abs] }}>{LEAVE_LABEL[abs]}</span> : r.active && <Badge tone="ok">Présent</Badge>}
+                            {abs ? <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: LEAVE_COLOR[abs] }}>{LEAVE_LABEL[abs]}</span> : r.active && <Badge tone="ok">Présent</Badge>}
                             {r.freelance && <Badge tone="warn">Freelance</Badge>}
                             {!r.active && <Badge>Sorti</Badge>}
                             {al > 0 && <Badge tone="bad">{al} qualif. à traiter</Badge>}

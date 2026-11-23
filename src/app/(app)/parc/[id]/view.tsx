@@ -14,7 +14,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ASSET_KINDS, REPAIR_OPEN } from "@/lib/domain/constants";
 import { daysBetween, parse } from "@/lib/domain/dates";
 import type { Asset, AuditEntry, Repair } from "@/lib/types";
-import { nf } from "@/lib/utils";
+import { nf, plural } from "@/lib/utils";
 import { RepairCard } from "../../reparations/view";
 import { RepairForm } from "../../reparations/shared";
 import { ASSET_FIELDS, assetInitial } from "../fields";
@@ -73,7 +73,7 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
                 <TruckArt state={vehicle.state} small className="w-3/4 max-w-[360px] opacity-90" />
               </div>
             )}
-            <span className="absolute top-3 left-4 rounded-md border-2 border-ink bg-surface px-2 font-mono text-base font-bold">{a.ref || a.name}</span>
+            <span className="absolute top-3 left-4 rounded-md border-2 border-ink bg-surface px-2 font-mono text-base font-semibold">{a.ref || a.name}</span>
             <span className="absolute top-3 right-4">
               <Badge tone={vehicle.state === "bad" ? "bad" : vehicle.state === "warn" ? "warn" : "ok"}>{vehicle.state === "bad" ? "Immobilisé" : vehicle.state === "warn" ? "À surveiller" : "Disponible"}</Badge>
             </span>
@@ -100,7 +100,7 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
             ))}
           </dl>
           <div className="grid gap-2 border-t border-line px-5 py-4 text-sm">
-            <p className="text-xs font-semibold tracking-wide text-muted uppercase">Échéances</p>
+            <p className="text-xs font-medium text-muted">Échéances</p>
             {[
               ["Contrôle technique", a.ct_due],
               ["Entretien", a.service_due],
@@ -123,7 +123,7 @@ export function AssetDetail({ asset: a, repairs, audit, assets }: { asset: Asset
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card>
-          <CardHeader title="Historique des réparations" subtitle={`${repairs.length} demande(s) · ${open.length} en cours`} />
+          <CardHeader title="Historique des réparations" subtitle={`${plural(repairs.length, "demande")} · ${open.length} en cours`} />
           <div className="grid gap-3 px-5 pb-5 sm:grid-cols-2 2xl:grid-cols-3">
             {repairs.length ? repairs.map((r, i) => <RepairCard key={r.id} r={r} i={i} />) : <Empty title="Aucune réparation enregistrée" />}
           </div>

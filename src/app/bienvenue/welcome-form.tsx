@@ -10,23 +10,17 @@ import { Logo } from "@/components/app/logo";
 export function WelcomeForm({ email, name, invitedBy, message, reset }: { email: string; name: string; invitedBy: string; message: string; reset: boolean }) {
   const [state, action, pending] = useActionState(completeOnboarding, {});
   return (
-    <div className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-10">
+    <div className="grid min-h-dvh place-items-center px-4 py-10">
       <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-brand/15 blur-3xl"
-        animate={{ scale: [1, 1.08, 1] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[460px] rounded-3xl border border-line bg-surface/95 p-8 shadow-pop backdrop-blur"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[460px] rounded-2xl border border-line bg-surface p-8 shadow-pop"
       >
         <div className="mb-6 flex items-center gap-3">
           <Logo className="h-12 w-12" />
           <div>
-            <h1 className="text-2xl leading-tight font-bold">{reset ? "Nouveau mot de passe" : "Bienvenue !"}</h1>
+            <h1 className="text-2xl leading-tight font-medium">{reset ? "Nouveau mot de passe" : "Bienvenue"}</h1>
             <p className="text-sm text-muted">Espace Expédition · Crouzil Boissons</p>
           </div>
         </div>

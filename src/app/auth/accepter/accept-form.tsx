@@ -14,10 +14,10 @@ export function AcceptForm({ tokenHash, type }: { tokenHash: string; type: "invi
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[420px] rounded-3xl border border-line bg-surface p-8 text-center shadow-pop"
+        className="w-full max-w-[420px] rounded-2xl border border-line bg-surface p-8 text-center shadow-pop"
       >
         <Logo className="mx-auto h-14 w-14" />
-        <h1 className="mt-4 text-2xl font-bold">{type === "recovery" ? "Nouveau mot de passe" : "Bienvenue dans l'Espace Expédition"}</h1>
+        <h1 className="mt-4 text-2xl font-medium">{type === "recovery" ? "Nouveau mot de passe" : "Bienvenue dans l'Espace Expédition"}</h1>
         <p className="mt-2 text-sm text-muted">
           {type === "recovery"
             ? "Cliquez sur le bouton pour choisir un nouveau mot de passe."

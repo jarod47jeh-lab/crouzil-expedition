@@ -29,7 +29,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     }
     const t = setTimeout(async () => {
       const sb = createClient();
-      const like = `%${s.replace(/[%_,()]/g, " ")}%`;
+      const like = `%${s.replace(/[%_,()]/g, "")}%`;
       const [e, c, a, r] = await Promise.all([
         sb.from("employees").select("id,name,job_title").is("deleted_at", null).ilike("name", like).limit(6),
         sb.from("clients").select("id,name,route").is("deleted_at", null).ilike("name", like).limit(6),
@@ -62,8 +62,8 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
             initial={{ opacity: 0, y: -12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 500, damping: 36 }}
-            className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-line bg-surface shadow-pop"
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full max-w-xl overflow-hidden rounded-2xl border border-line bg-surface shadow-pop"
           >
             <Command shouldFilter={false} loop onKeyDown={(e) => e.key === "Escape" && onClose()}>
               <Command.Input

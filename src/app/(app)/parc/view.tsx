@@ -9,7 +9,7 @@ import { motion } from "motion/react";
 import { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TruckArt } from "@/components/ui/truck-art";
-import { cn, nf } from "@/lib/utils";
+import { cn, nf, plural } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -66,20 +66,20 @@ export function ParcView({ assets, repairs, employees = [] }: { assets: Asset[];
         <div className="grid min-w-max grid-flow-col auto-cols-[minmax(140px,1fr)] overflow-hidden rounded-2xl border border-line bg-surface sm:min-w-0">
           {[
             ["Véhicules", fleet.length, "text-ink", `${vehicles.filter((v) => v.state === "ok").length} disponibles`],
-            ["Immobilisés", immo.length, immo.length ? "text-bad" : "text-ok", immo.map((a) => a.name).join(", ") || "aucun"],
+            ["Immobilisés", immo.length, immo.length ? "text-bad" : "text-ok", immo.map((a) => a.name).join(", ") ||"aucun"],
             ["Échéances à 30 jours", dueSoon.length, dueSoon.length ? "text-warn" : "text-ok", "CT, entretien, assurance"],
             ["Matériel", gear.length, "text-ink", "transpalettes, diables…"],
           ].map(([l, v, c, sub], i) => (
             <div key={l as string} className={cn("px-4 py-3", i && "border-l border-line")}>
-              <p className="truncate text-[11px] font-semibold tracking-[0.07em] text-muted uppercase">{l}</p>
-              <p className={cn("tabular mt-1 font-display text-[26px] leading-none font-bold", c as string)}>{v}</p>
+              <p className="truncate text-xs text-muted">{l}</p>
+              <p className={cn("tabular mt-1 text-[28px] leading-none font-medium", c as string)}>{v}</p>
               <p className="mt-1 truncate text-xs text-muted">{sub}</p>
             </div>
           ))}
         </div>
       </div>
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">Flotte</h2>
+        <h2 className="text-lg font-medium">Flotte</h2>
         <div className="flex rounded-xl border border-line bg-surface p-0.5 text-sm font-semibold">
           {(["cartes", "liste"] as const).map((k) => (
             <button key={k} onClick={() => setView(k)} aria-pressed={view === k} className={cn("rounded-lg px-3 py-1.5", view === k ? "bg-ink text-bg" : "text-muted")}>
@@ -101,16 +101,16 @@ export function ParcView({ assets, repairs, employees = [] }: { assets: Asset[];
                   <motion.div key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 8) * 0.04 }} className="group grid overflow-hidden rounded-2xl border border-line bg-surface transition-colors hover:border-brand/40">
                     <Link href={`/parc/${a.id}`} className="relative block bg-gradient-to-b from-surface-2/70 to-surface px-4 pt-3">
                       <div className="flex items-start justify-between gap-2">
-                        <span className="rounded-md border-2 border-ink bg-surface px-2 font-mono text-sm font-bold">{a.ref || "—"}</span>
+                        <span className="rounded-md border-2 border-ink bg-surface px-2 font-mono text-sm font-semibold">{a.ref || "—"}</span>
                         <Badge tone={v.state === "bad" ? "bad" : v.state === "warn" ? "warn" : "ok"} dot>
                           {v.state === "bad" ? "Immobilisé" : v.state === "warn" ? "À surveiller" : "Disponible"}
                         </Badge>
                       </div>
-                      <TruckArt state={v.state} small={/vl|utilitaire|fourgon/i.test(`${a.designation} ${a.name}`)} className="mx-auto -mt-1 h-[92px] w-full transition-transform group-hover:-translate-y-0.5" />
+                      <TruckArt state={v.state} small={/vl|utilitaire|fourgon/i.test(`${a.designation} ${a.name}`)} className="mx-auto -mt-1 h-[92px] w-full transition-transform group-" />
                     </Link>
                     <div className="grid gap-3 px-4 pt-1 pb-4">
                       <div>
-                        <Link href={`/parc/${a.id}`} className="font-display text-lg leading-tight font-bold hover:text-brand">{a.name}</Link>
+                        <Link href={`/parc/${a.id}`} className="font-display text-lg leading-tight font-medium hover:text-brand">{a.name}</Link>
                         <p className="text-xs text-muted">{[a.designation, a.brand, a.model, a.tonnage].filter(Boolean).join(" · ") || "Véhicule"}</p>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-xl bg-surface-2/60 p-2">
@@ -125,14 +125,14 @@ export function ParcView({ assets, repairs, employees = [] }: { assets: Asset[];
                           const left = dd ? -daysBetween(dd) : null;
                           return (
                             <div key={k} className={cn("rounded-lg border px-1 py-1.5", left == null ? "border-dashed border-line text-muted" : left < 0 ? "border-bad/40 bg-bad/8 text-bad" : left <= 30 ? "border-warn/40 bg-warn/10 text-warn" : "border-line")}>
-                              <p className="text-[10px] font-semibold tracking-wide uppercase opacity-80">{k}</p>
-                              <p className="text-xs font-bold">{dd ? (left! < 0 ? "Dépassé" : left! <= 60 ? `${left} j` : fmtShort(dd)) : "—"}</p>
+                              <p className="text-[10px] font-semibold opacity-80">{k}</p>
+                              <p className="text-xs font-semibold">{dd ? (left! < 0 ? "Dépassé" : left! <= 60 ? `${left} j` : fmtShort(dd)) : "—"}</p>
                             </div>
                           );
                         })}
                       </div>
                       <div className="flex items-center gap-2">
-                        {o.length ? <Badge tone={o.some((r) => r.immobilized) ? "bad" : "warn"} dot>{o.length} réparation(s)</Badge> : <span className="text-xs text-muted">Aucune réparation en cours</span>}
+                        {o.length ? <Badge tone={o.some((r) => r.immobilized) ? "bad" : "warn"} dot>{plural(o.length, "réparation")}</Badge> : <span className="text-xs text-muted">Aucune réparation en cours</span>}
                         <CanWrite module="reparations">
                           <Link href={`/signaler?asset=${a.id}`} className="ml-auto inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-semibold hover:border-brand/40 hover:text-brand">
                             <Camera className="h-3.5 w-3.5" /> Signaler
@@ -149,13 +149,13 @@ export function ParcView({ assets, repairs, employees = [] }: { assets: Asset[];
           )}
           {gear.length > 0 && (
             <>
-              <h2 className="mb-3 text-lg font-bold">Matériel</h2>
+              <h2 className="mb-3 text-lg font-medium">Matériel</h2>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {gear.map((a) => {
                   const o = openOf(a);
                   return (
                     <Link key={a.id} href={`/parc/${a.id}`} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 hover:border-brand/40">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-violet/10 text-violet">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-line text-muted">
                         <Forklift className="h-5 w-5" />
                       </span>
                       <span className="min-w-0 flex-1">

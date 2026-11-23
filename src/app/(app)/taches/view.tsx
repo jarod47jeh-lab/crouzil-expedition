@@ -15,7 +15,7 @@ import { renameSection, saveRow, trashRows } from "@/lib/actions/crud";
 import { ProgressBar, TaskFollowUp } from "./follow-up";
 import { daysBetween, fmtShort } from "@/lib/domain/dates";
 import type { Task } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 /** Échéance : en retard, aujourd'hui, à venir */
 function DueBadge({ date, done }: { date: string | null; done: boolean }) {
@@ -39,7 +39,7 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete, onOpen }: { t: Task; 
       initial={{ opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: 24, transition: { duration: 0.18 } }}
-      transition={{ type: "spring", stiffness: 500, damping: 38 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className="group flex items-start gap-3 px-5 py-2.5"
     >
       <button
@@ -53,7 +53,7 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete, onOpen }: { t: Task; 
       >
         <AnimatePresence>
           {t.done && (
-            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ type: "spring", stiffness: 600, damping: 22 }}>
+            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
               <Check className="h-3.5 w-3.5" strokeWidth={3} />
             </motion.span>
           )}
@@ -90,7 +90,7 @@ function TaskRow({ t, canEdit, onToggle, onEdit, onDelete, onOpen }: { t: Task; 
         )}
       </div>
       {steps > 0 && (
-        <button onClick={onOpen} className="mt-0.5 hidden shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] font-semibold text-muted hover:text-ink sm:inline-flex" aria-label={`Suivi : ${steps} point(s) d'étape`}>
+        <button onClick={onOpen} className="mt-0.5 hidden shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-xs text-muted hover:text-ink sm:inline-flex" aria-label={`Suivi : ${plural(steps, "point")} d'étape`}>
           <MessageSquareText className="h-3 w-3" /> {steps}
         </button>
       )}
@@ -134,7 +134,7 @@ function SectionCard({
   };
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.05, type: "spring", stiffness: 260, damping: 30 }}>
+    <motion.div layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(index, 8) * 0.05, duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
       <Card className="overflow-hidden">
         <div className="flex items-center gap-3 px-5 pt-4 pb-2">
           {renaming != null ? (
@@ -149,7 +149,7 @@ function SectionCard({
               <input autoFocus value={renaming} onChange={(e) => setRenaming(e.target.value)} onBlur={() => setRenaming(null)} className="field h-9 min-h-0 flex-1" aria-label="Nom de la rubrique" />
             </form>
           ) : (
-            <h2 className="min-w-0 flex-1 truncate text-[17px] font-bold">
+            <h2 className="min-w-0 flex-1 truncate text-base font-medium">
               {name}
               {canEdit && tasks.length > 0 && (
                 <button onClick={() => setRenaming(name)} className="ml-1.5 inline-grid h-6 w-6 place-items-center rounded-md align-middle text-muted hover:bg-surface-2 hover:text-brand" aria-label={`Renommer la rubrique ${name}`}>
@@ -306,7 +306,7 @@ export function TasksView({ tasks: initial, people }: { tasks: Task[]; people: s
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi index={0} label="À faire" value={open.length} icon={<ListTodo className="h-5 w-5" />} sub={`dans ${sections.filter((s) => s.tasks.some((t) => !t.done)).length} rubrique(s)`} />
+        <Kpi index={0} label="À faire" value={open.length} icon={<ListTodo className="h-5 w-5" />} sub={`dans ${plural(sections.filter((s) => s.tasks.some((t) => !t.done)).length, "rubrique")}`} />
         <Kpi index={1} label="En retard ou pour aujourd'hui" value={urgent} tone={urgent ? "bad" : "ok"} icon={<Siren className="h-5 w-5" />} sub="selon l'échéance" />
         <Kpi index={2} label="Faites cette semaine" value={doneWeek} tone="ok" icon={<CircleCheckBig className="h-5 w-5" />} sub="7 derniers jours" />
         <Kpi index={3} label="Avancement" value={tasks.length ? Math.round(((tasks.length - open.length) / tasks.length) * 100) : 0} suffix=" %" tone="violet" sub={`${tasks.length - open.length} sur ${tasks.length} tâches`} />

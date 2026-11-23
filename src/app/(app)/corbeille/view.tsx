@@ -1,4 +1,5 @@
 "use client";
+import { plural } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { RotateCcw, Trash2, X } from "lucide-react";
 import { useTransition } from "react";
@@ -36,7 +37,7 @@ export function TrashView({ rows }: { rows: Row[] }) {
     start(async () => {
       const res = await purgeTrash();
       if (!res.ok) return void toast.error(res.error);
-      toast.success(`${res.data} élément(s) de plus de 30 jours supprimé(s)`);
+      toast.success(`${plural(res.data ?? 0, "élément")} de plus de 30 jours ${(res.data ?? 0) > 1 ? "supprimés" : "supprimé"}`);
       router.refresh();
     });
   const left = (d: string) => Math.max(0, 30 - Math.floor((Date.now() - new Date(d).getTime()) / 86400000));
