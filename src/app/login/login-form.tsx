@@ -13,29 +13,17 @@ export function LoginForm({ next, error }: { next: string; error?: string }) {
   const [rstate, raction, rpending] = useActionState(sendPasswordReset, {});
 
   return (
-    <div className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-10">
+    <div className="grid min-h-dvh place-items-center px-4 py-10">
       <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -top-40 -right-40 h-[520px] w-[520px] rounded-full bg-brand/15 blur-3xl"
-        animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-48 -left-40 h-[460px] w-[460px] rounded-full bg-info/10 blur-3xl"
-        animate={{ scale: [1.05, 1, 1.05] }}
-        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="relative w-full max-w-[420px] rounded-3xl border border-line bg-surface/90 p-8 shadow-pop backdrop-blur"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="relative w-full max-w-[420px] rounded-2xl border border-line bg-surface p-8 shadow-pop"
       >
         <div className="mb-7 flex items-center gap-3">
           <Logo className="h-12 w-12" />
           <div>
-            <h1 className="text-2xl font-bold leading-tight">Espace Expédition</h1>
+            <h1 className="text-2xl font-medium leading-tight">Espace Expédition</h1>
             <p className="text-sm text-muted">Crouzil Boissons</p>
           </div>
         </div>

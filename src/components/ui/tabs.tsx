@@ -11,15 +11,15 @@ export function Tabs({ tabs, active, id = "tabs" }: { tabs: { key: string; label
           key={t.key}
           href={t.href}
           scroll={false}
-          className={cn("relative rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-colors", active === t.key ? "text-brand-ink" : "text-muted hover:text-ink")}
+          className={cn("relative rounded-xl px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors", active === t.key ? "text-ink" : "text-muted hover:text-ink")}
         >
           {active === t.key && (
-            <motion.span layoutId={id} className="absolute inset-0 rounded-xl bg-brand" transition={{ type: "spring", stiffness: 500, damping: 38 }} />
+            <motion.span layoutId={id} className="absolute inset-0 rounded-xl bg-surface-2 shadow-[inset_0_0_0_1px_var(--line)]" transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }} />
           )}
           <span className="relative inline-flex items-center gap-2">
             {t.label}
             {t.count != null && t.count > 0 && (
-              <span className={cn("rounded-full px-1.5 text-[11px] leading-5", active === t.key ? "bg-white/25" : "bg-surface-2")}>{t.count}</span>
+              <span className="tabular text-xs text-muted">{t.count}</span>
             )}
           </span>
         </Link>

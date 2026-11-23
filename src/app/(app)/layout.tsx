@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return (
       <div className="grid min-h-dvh place-items-center p-6 text-center">
         <div className="max-w-sm">
-          <h1 className="text-xl font-bold">Accès non autorisé</h1>
+          <h1 className="text-xl font-medium">Accès non autorisé</h1>
           <p className="mt-2 text-sm text-muted">Votre compte ({user.email}) n&apos;est pas ou plus autorisé. Demandez à un responsable de vous réactiver.</p>
           <form action={signOut} className="mt-4">
             <button className="text-brand underline">Se déconnecter</button>

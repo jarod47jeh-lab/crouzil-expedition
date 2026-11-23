@@ -21,7 +21,7 @@ import { TEAM_ORDER, TEAMS } from "@/lib/domain/constants";
 import { fmtDate, iso, today } from "@/lib/domain/dates";
 import { applies, CATEGORIES, ISSUE_STATE, issueStatus, SIZE_KINDS, sizeOf } from "@/lib/domain/equipment";
 import type { Employee, EquipmentIssue, EquipmentItem, Team } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 type Tab = "tailles" | "dotations" | "commande" | "catalogue";
 const TEAM_CHOICES: [string, string][] = [
@@ -106,7 +106,7 @@ function Sizes({ employees, canEdit }: { employees: Employee[]; canEdit: boolean
       <div className="overflow-x-auto [contain:paint]">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
-            <tr className="border-y border-line bg-surface-2/50 text-left text-[11px] tracking-wide text-muted uppercase">
+            <tr className="border-y border-line bg-surface-2/50 text-left text-[11px] text-muted">
               <th className="sticky left-0 z-10 bg-surface-2 px-4 py-2.5 font-semibold">Collaborateur</th>
               {SIZE_KINDS.map((s) => (
                 <th key={s.k} className="px-3 py-2.5 font-semibold">{s.label}</th>
@@ -119,7 +119,7 @@ function Sizes({ employees, canEdit }: { employees: Employee[]; canEdit: boolean
               if (!rows.length) return [];
               return [
                 <tr key={g}>
-                  <td colSpan={5} className="sticky left-0 bg-surface px-4 pt-4 pb-1 text-[11px] font-bold tracking-wide text-muted uppercase">{TEAMS[g]}</td>
+                  <td colSpan={5} className="sticky left-0 bg-surface px-4 pt-4 pb-1 text-xs text-muted">{TEAMS[g]}</td>
                 </tr>,
                 ...rows.map((e) => (
                   <tr key={e.id} className="border-t border-line/70">
@@ -179,7 +179,7 @@ function Issues({ team, employees, items, issues, canEdit }: { team: Team; emplo
           <div className="overflow-x-auto [contain:paint]">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-line bg-surface-2/50 text-left text-[11px] tracking-wide text-muted uppercase">
+                <tr className="border-b border-line bg-surface-2/50 text-left text-[11px] text-muted">
                   <th className="sticky left-0 z-10 min-w-[150px] bg-surface-2 px-4 py-2.5 font-semibold">Collaborateur</th>
                   {cols.map((it) => (
                     <th key={it.id} className="min-w-[96px] px-2 py-2.5 align-bottom font-semibold">
@@ -281,7 +281,7 @@ function IssueDialog({ cell, issues, canEdit, onClose }: { cell: { e: Employee; 
     >
       {hist.length > 0 && (
         <div className="mb-4 grid gap-2">
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase">Historique</p>
+          <p className="text-xs font-medium text-muted">Historique</p>
           {hist.map((h) => (
             <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-xl border border-line p-2.5 text-sm">
               <span className="font-semibold">{fmtDate(h.issued_on)}</span>
@@ -307,7 +307,7 @@ function IssueDialog({ cell, issues, canEdit, onClose }: { cell: { e: Employee; 
       )}
       {canEdit ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <p className="text-xs font-semibold tracking-wide text-muted uppercase sm:col-span-2">Nouvelle remise</p>
+          <p className="text-xs font-medium text-muted sm:col-span-2">Nouvelle remise</p>
           <Field label="Date de remise">
             <Input type="date" value={form.issued_on} onChange={(e) => setForm({ ...form, issued_on: e.target.value })} />
           </Field>
@@ -371,7 +371,7 @@ function Order({ team, employees, items }: { team: Team; employees: Employee[]; 
       <Card className="overflow-hidden">
         <CardHeader
           title={`Commande groupée · ${TEAMS[team]}`}
-          subtitle={`${people.length} personne(s) · ${total} article(s) au total`}
+          subtitle={`${plural(people.length, "personne")} · ${plural(total, "article")} au total`}
           actions={
             <Button size="sm" variant="outline" onClick={csv} disabled={!rows.length}>
               <Download className="h-3.5 w-3.5" /> Excel / CSV
@@ -382,7 +382,7 @@ function Order({ team, employees, items }: { team: Team; employees: Employee[]; 
           <div className="overflow-x-auto [contain:paint]">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="border-y border-line bg-surface-2/50 text-left text-[11px] tracking-wide text-muted uppercase">
+                <tr className="border-y border-line bg-surface-2/50 text-left text-[11px] text-muted">
                   <th className="px-4 py-2.5 font-semibold">Article</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Par pers.</th>
                   <th className="px-3 py-2.5 text-right font-semibold">Total</th>
@@ -397,18 +397,18 @@ function Order({ team, employees, items }: { team: Team; employees: Employee[]; 
                       {r.it.norm && <span className="block text-xs text-muted">{r.it.norm}</span>}
                     </td>
                     <td className="tabular px-3 py-2.5 text-right">{r.it.qty_per_person}</td>
-                    <td className="tabular px-3 py-2.5 text-right font-bold">{r.total}</td>
+                    <td className="tabular px-3 py-2.5 text-right font-semibold">{r.total}</td>
                     <td className="px-3 py-2.5">
                       <div className="flex flex-wrap gap-1">
                         {r.sizes.map(([s, n]) => (
                           <Badge key={s} tone="info">{s} × {n}</Badge>
                         ))}
-                        {r.missing > 0 && <Badge tone="warn">{r.missing} taille(s) manquante(s)</Badge>}
+                        {r.missing > 0 && <Badge tone="warn">{plural(r.missing, "taille manquante", "tailles manquantes")}</Badge>}
                       </div>
                     </td>
                   </tr>
                 ))}
-                <tr className="border-t-2 border-ink/80 font-bold">
+                <tr className="border-t-2 border-ink/80 font-semibold">
                   <td className="px-4 py-2.5">Total des articles</td>
                   <td />
                   <td className="tabular px-3 py-2.5 text-right">{total}</td>
@@ -451,7 +451,7 @@ function Catalogue({ items, canEdit }: { items: EquipmentItem[]; canEdit: boolea
           { key: "qty", header: "Par pers.", sort: (i) => i.qty_per_person, cell: (i) => <span className="tabular">{i.qty_per_person}</span> },
           { key: "size", header: "Taille", hideOnMobile: true, sort: (i) => i.sized || "", exportValue: (i) => SIZE_KINDS.find((s) => s.k === i.sized)?.label || "Unique", cell: (i) => SIZE_KINDS.find((s) => s.k === i.sized)?.label || <span className="text-muted">Unique</span> },
           { key: "ren", header: "Renouvellement", hideOnMobile: true, sort: (i) => i.renewal_months || 999, exportValue: (i) => (i.renewal_months ? `${i.renewal_months} mois` : ""), cell: (i) => (i.renewal_months ? `${i.renewal_months} mois` : <span className="text-muted">—</span>) },
-          { key: "teams", header: "Pour", hideOnMobile: true, sort: (i) => (i.teams || []).join(","), exportValue: (i) => (i.teams?.length ? i.teams.map((x) => TEAMS[x]).join(", ") : "Tous"), cell: (i) => (i.teams?.length ? i.teams.map((x) => TEAMS[x]).join(", ") : "Tous") },
+          { key: "teams", header: "Pour", hideOnMobile: true, sort: (i) => (i.teams || []).join(","), exportValue: (i) => (i.teams?.length ? i.teams.map((x) => TEAMS[x]).join(", ") :"Tous"), cell: (i) => (i.teams?.length ? i.teams.map((x) => TEAMS[x]).join(", ") :"Tous") },
         ]}
       />
       <EntityForm

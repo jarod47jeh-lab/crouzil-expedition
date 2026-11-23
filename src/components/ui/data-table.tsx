@@ -188,12 +188,12 @@ export function DataTable<T extends { id: string }>({
         <div className="overflow-x-auto [contain:paint]">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-line bg-surface-2/50 text-[12px] font-semibold tracking-wide text-muted uppercase">
+              <tr className="border-b border-line bg-surface-2/50 text-xs font-medium text-muted">
                 {columns.map((c) => (
                   <th key={c.key} className={cn("px-4 py-2.5 whitespace-nowrap", c.hideOnMobile && "hidden md:table-cell", c.className)}>
                     {c.sort ? (
                       <button
-                        className="inline-flex items-center gap-1 uppercase hover:text-ink"
+                        className="inline-flex items-center gap-1 hover:text-ink"
                         onClick={() => setSort((s) => (s?.key === c.key ? { key: c.key, dir: s.dir === "asc" ? "desc" : "asc" } : { key: c.key, dir: "asc" }))}
                       >
                         {c.header}

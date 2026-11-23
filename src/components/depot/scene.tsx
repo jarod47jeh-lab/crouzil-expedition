@@ -909,7 +909,7 @@ function Pin({
       onClick={onClick}
       style={{ visibility: "hidden" }}
       className={
-        "absolute top-0 left-0 z-[5] flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap text-ink shadow-[0_6px_18px_rgba(40,25,15,.2)] " +
+        "absolute top-0 left-0 z-[5] flex items-center gap-1.5 rounded-full border bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-ink shadow-[0_6px_18px_rgba(40,25,15,.2)] " +
         (active ? "border-brand" : "border-line hover:border-brand/50")
       }
     >
@@ -1154,7 +1154,7 @@ function WalkHud({ zone, here, input, onExit }: { zone: ZoneId; here: ZoneId | n
         </button>
       </div>
       {hint && (
-        <div className="pointer-events-none absolute top-14 left-1/2 z-[6] -translate-x-1/2 rounded-full bg-ink/90 px-3.5 py-1.5 text-center text-[12.5px] text-surface">
+        <div className="pointer-events-none absolute top-14 left-1/2 z-[6] -translate-x-1/2 rounded-full bg-ink/90 px-3.5 py-1.5 text-center text-[13px] text-surface">
           <span className="hidden sm:inline">Z Q S D ou flèches pour marcher · Maj pour courir · glissez pour regarder · Échap pour sortir</span>
           <span className="sm:hidden">Boutons pour marcher · glissez pour regarder</span>
         </div>

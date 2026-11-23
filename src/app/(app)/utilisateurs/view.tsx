@@ -74,7 +74,7 @@ function AccessFields({
                   : "border-line hover:border-ink/30",
               )}
             >
-              <span className="block text-sm font-bold">{ROLES[r].label}</span>
+              <span className="block text-sm font-semibold">{ROLES[r].label}</span>
               <span className="block text-xs text-muted">{ROLES[r].help}</span>
             </button>
           ))}
@@ -292,10 +292,7 @@ export function UsersView({
                     <span className="text-xs text-muted">
                       {MODULES.filter((x) => m.modules!.includes(x.key))
                         .map((x) => x.label)
-                        .join(", ")}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-bad">aucun menu</span>
+                        .join(", ")} </span> ) : ( <span className="text-xs text-bad">aucun menu</span>
                   ))}
               </div>
             ),

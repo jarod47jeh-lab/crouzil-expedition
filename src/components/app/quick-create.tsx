@@ -26,13 +26,13 @@ function Menu({ onClose, className }: { onClose: () => void; className?: string 
       initial={{ opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 8, scale: 0.97 }}
-      transition={{ type: "spring", stiffness: 500, damping: 34 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className={cn("w-[300px] rounded-2xl border border-line bg-surface p-1.5 shadow-pop", className)}
       role="menu"
     >
       {items.map((i) => (
         <Link key={i.href} href={i.href} onClick={onClose} role="menuitem" className="flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-surface-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line text-muted">
             <i.icon className="h-[18px] w-[18px]" />
           </span>
           <span className="min-w-0">
@@ -97,9 +97,9 @@ export function QuickCreateFab() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fermer" : "Nouveau"}
         aria-expanded={open}
-        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 grid h-14 w-14 place-items-center rounded-2xl bg-brand text-brand-ink shadow-[0_12px_28px_-8px_rgb(206_0_19/0.6)] lg:hidden"
+        className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-50 grid h-14 w-14 place-items-center rounded-2xl bg-brand text-brand-ink shadow-pop lg:hidden"
       >
-        <motion.span animate={{ rotate: open ? 45 : 0 }} transition={{ type: "spring", stiffness: 500, damping: 30 }}>
+        <motion.span animate={{ rotate: open ? 45 : 0 }} transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}>
           {open ? <X className="h-6 w-6 -rotate-45" /> : <Plus className="h-6 w-6" />}
         </motion.span>
       </motion.button>

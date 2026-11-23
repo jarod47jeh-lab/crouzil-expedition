@@ -1,4 +1,5 @@
 "use client";
+import { plural } from "@/lib/utils";
 import { CanWrite, usePerms } from "@/components/app/perms-context";
 import Link from "next/link";
 import { ArrowLeft, Mail, MapPin, Pencil, Phone, Plus } from "lucide-react";
@@ -105,7 +106,7 @@ export function ClientDetail({ client: c, errors, audit, justifs, notes }: { cli
             </div>
           </Card>
           <Card>
-            <CardHeader title="Historique des erreurs" subtitle={`${errors.length} erreur(s)`} />
+            <CardHeader title="Historique des erreurs" subtitle={`${plural(errors.length, "erreur")}`} />
             {errors.length ? (
               <ul className="divide-y divide-line">
                 {errors.map((e) => {

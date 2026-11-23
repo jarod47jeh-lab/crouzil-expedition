@@ -18,7 +18,7 @@ import { ASSET_KINDS, REPAIR_STATUS, URGENCY_TONE } from "@/lib/domain/constants
 import { daysBetween, fmtDate } from "@/lib/domain/dates";
 import { createClient } from "@/lib/supabase/client";
 import type { Asset, AuditEntry, Repair, RepairStatus } from "@/lib/types";
-import { cn, nf } from "@/lib/utils";
+import { cn, nf, plural } from "@/lib/utils";
 import { RepairForm } from "../shared";
 
 const FLOW: RepairStatus[] = ["A", "T", "V", "R", "F"];
@@ -60,7 +60,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
       if (!res.ok) toast.error(res.error);
     }
     setUploading(false);
-    toast.success("Photo(s) ajoutée(s)");
+    toast.success(files.length > 1 ? "Photos ajoutées" : "Photo ajoutée");
     router.refresh();
   };
 
@@ -112,7 +112,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
                   onClick={() => setStatus(s)}
                   disabled={!canEdit || pending || s === r.status}
                   className={cn(
-                    "group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-all",
+                    "group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition-[color,background-color,border-color,opacity,transform]",
                     s === r.status ? "border-brand bg-brand text-brand-ink shadow" : done ? "border-brand/30 bg-brand/10 text-brand" : "border-line text-muted hover:border-brand/40 hover:text-ink",
                   )}
                 >
@@ -149,14 +149,14 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
                   ["Coût", r.cost ? `${nf(Number(r.cost), 2)} € HT` : "–"],
                 ].map(([k, v]) => (
                   <div key={k}>
-                    <dt className="text-xs font-semibold text-muted uppercase">{k}</dt>
+                    <dt className="text-xs font-medium text-muted">{k}</dt>
                     <dd className="mt-0.5 font-medium">{v}</dd>
                   </div>
                 ))}
               </dl>
               {r.note && (
                 <div className="rounded-xl bg-surface-2 p-3 text-sm">
-                  <p className="mb-1 text-xs font-semibold text-muted uppercase">Suivi</p>
+                  <p className="mb-1 text-xs font-medium text-muted">Suivi</p>
                   <p className="whitespace-pre-wrap">{r.note}</p>
                 </div>
               )}
@@ -165,7 +165,7 @@ export function RepairDetail({ repair: r, assets, audit, photos }: { repair: Rep
           <Card>
             <CardHeader
               title="Photos"
-              subtitle={`${photos.length} photo(s)`}
+              subtitle={`${plural(photos.length, "photo")}`}
               actions={
                 <>
                   <input ref={input} type="file" accept="image/*" capture="environment" multiple hidden onChange={(e) => upload(e.target.files)} />

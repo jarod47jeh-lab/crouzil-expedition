@@ -49,7 +49,7 @@ export function NoteCard({ n, i = 0, author, closer, me, onEdit, compact }: { n:
     >
       <div className="flex flex-wrap items-center gap-1.5">
         <Badge tone={NOTE_LEVELS[n.level].tone}>{NOTE_LEVELS[n.level].label}</Badge>
-        <span className="text-xs font-semibold text-muted">{NOTE_KINDS[n.kind]}</span>
+        <span className="text-xs font-medium text-muted">{NOTE_KINDS[n.kind]}</span>
         {n.permanent ? (
           <Badge tone="violet">
             <Repeat className="h-3 w-3" /> Permanente{n.until_date && ` jusqu'au ${fmtShort(n.until_date)}`}
@@ -64,11 +64,11 @@ export function NoteCard({ n, i = 0, author, closer, me, onEdit, compact }: { n:
       <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
         {n.client_name &&
           (n.client_id ? (
-            <Link href={`/clients/${n.client_id}`} className="font-display text-[16px] font-bold hover:text-brand">
+            <Link href={`/clients/${n.client_id}`} className="font-display text-base font-medium hover:text-brand">
               {n.client_name}
             </Link>
           ) : (
-            <span className="font-display text-[16px] font-bold">{n.client_name}</span>
+            <span className="font-display text-base font-medium">{n.client_name}</span>
           ))}
         {n.route && (
           <span className="inline-flex items-center gap-1 text-xs text-muted">

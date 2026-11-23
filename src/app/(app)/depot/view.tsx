@@ -1,4 +1,5 @@
 "use client";
+import { plural } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { AnimatePresence } from "motion/react";
 import { Warehouse } from "lucide-react";
@@ -29,7 +30,7 @@ export function DepotView({ assets, repairs, notes, employees, leaves, marks }: 
       vehicles,
       { quais: deliv.filter((n) => n.level === "attention" && n.status === "todo").length, vide: recup.filter((n) => n.status === "todo").length, parking: down },
       {
-        quais: { lines: deliv.map(noteLine), stat: `${deliv.length} consigne(s) pour les départs · 3 rideaux` },
+        quais: { lines: deliv.map(noteLine), stat: `${plural(deliv.length, "consigne")} pour les départs · 3 rideaux` },
         vide: { lines: recup.map(noteLine), stat: "Retours de fûts et casiers vides" },
         parking: { stat: `${vehicles.length - down}/${vehicles.length} véhicules disponibles` },
         soft: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },

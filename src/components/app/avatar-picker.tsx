@@ -10,7 +10,7 @@ import { avatarOf, genderOf, type AvatarStyle } from "@/lib/domain/avatar";
 import { AvatarEditor } from "./avatar-editor";
 import { TEAMS } from "@/lib/domain/constants";
 import type { Employee } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 /** Style de départ : l'avatar enregistré, ou celui généré avec le genre deviné */
 const startOf = (emp: Employee): AvatarStyle => {
@@ -87,7 +87,7 @@ export function AvatarStudio({ employees, open, onClose }: { employees: Employee
       onClose={onClose}
       wide
       title="Avatars de l'équipe"
-      subtitle={unsure ? `${unsure} collaborateur(s) dont le genre n'est pas encore choisi` : "Choisissez un collaborateur, puis son avatar"}
+      subtitle={unsure ? `${plural(unsure, "collaborateur")} dont le genre n'est pas encore choisi` : "Choisissez un collaborateur, puis son avatar"}
       footer={
         <>
           <Button variant="outline" onClick={onClose}>

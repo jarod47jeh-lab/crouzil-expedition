@@ -119,7 +119,7 @@ export function TaskFollowUp({ task, open, mode, onClose, canEdit }: { task: Tas
         <div>
           <div className="mb-1.5 flex items-baseline justify-between text-sm">
             <span className="font-semibold">Avancement</span>
-            <span className="font-bold tabular-nums">{progress} %</span>
+            <span className="font-semibold tabular-nums">{progress} %</span>
           </div>
           <ProgressBar value={progress} done={task.done} className="h-2.5" />
         </div>
@@ -132,7 +132,7 @@ export function TaskFollowUp({ task, open, mode, onClose, canEdit }: { task: Tas
             <div>
               <div className="mb-1.5 flex items-center justify-between text-[13px]">
                 <span className="font-semibold">Avancement après ce point</span>
-                <span className="font-bold tabular-nums">{pct} %</span>
+                <span className="font-semibold tabular-nums">{pct} %</span>
               </div>
               <input type="range" min={0} max={90} step={5} value={pct} onChange={(e) => setPct(Number(e.target.value))} className="w-full accent-[var(--brand)]" aria-label="Avancement en pourcentage" />
               <div className="mt-1.5 flex flex-wrap gap-1.5">

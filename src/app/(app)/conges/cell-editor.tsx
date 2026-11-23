@@ -83,7 +83,7 @@ export function CellEditor({
         <div className="flex flex-wrap items-center gap-2 rounded-xl bg-surface-2/60 px-3 py-2.5">
           <span className="text-sm text-muted">Actuellement :</span>
           <span
-            className="rounded-md px-2 py-0.5 text-sm font-bold"
+            className="rounded-md px-2 py-0.5 text-sm font-semibold"
             style={current.type && current.type !== "PRES" ? { background: LEAVE_COLOR[current.type], color: "white" } : { background: "var(--surface)", color: "var(--ink)" }}
           >
             {current.label}
@@ -131,7 +131,7 @@ export function CellEditor({
                   type="button"
                   disabled={pending}
                   onClick={() => apply("PRES", "Présent enregistré")}
-                  className={cn("rounded-lg border px-2.5 py-1.5 text-xs font-bold", current.type === "PRES" ? "border-ink" : "border-line")}
+                  className={cn("rounded-lg border px-2.5 py-1.5 text-xs font-semibold", current.type === "PRES" ? "border-ink" : "border-line")}
                 >
                   Présent
                 </button>
@@ -142,7 +142,7 @@ export function CellEditor({
                     disabled={pending}
                     onClick={() => apply(t.k, `${t.label} enregistré`)}
                     title={t.label}
-                    className={cn("rounded-lg border px-2.5 py-1.5 text-xs font-bold", current.type === t.k ? "border-ink" : "border-transparent")}
+                    className={cn("rounded-lg border px-2.5 py-1.5 text-xs font-semibold", current.type === t.k ? "border-ink" : "border-transparent")}
                     style={{ background: `color-mix(in srgb, ${t.color} 22%, transparent)`, color: t.color }}
                   >
                     {t.k} <span className="font-semibold opacity-80">· {t.label}</span>

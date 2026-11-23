@@ -68,7 +68,7 @@ export function JournalView({ entries, me }: { entries: JournalEntry[]; me: stri
         <div className="grid gap-8">
           {byDay.map(([day, items]) => (
             <section key={day}>
-              <h2 className="mb-3 flex items-center gap-3 text-sm font-bold text-muted">
+              <h2 className="mb-3 flex items-center gap-3 text-sm font-medium text-muted">
                 {fmtLong(parse(day))}
                 <span className="h-px flex-1 bg-line" />
               </h2>

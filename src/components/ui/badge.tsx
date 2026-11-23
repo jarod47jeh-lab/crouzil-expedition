@@ -13,7 +13,7 @@ const T: Record<Tone, string> = {
 
 export function Badge({ tone = "muted", className, children, dot }: { tone?: Tone; className?: string; children: React.ReactNode; dot?: boolean }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap", T[tone], className)}>
+    <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap", T[tone], className)}>
       {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
       {children}
     </span>
@@ -23,7 +23,7 @@ export function Badge({ tone = "muted", className, children, dot }: { tone?: Ton
 export function ColorBadge({ color, children }: { color: string; children: React.ReactNode }) {
   return (
     <span
-      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
+      className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap"
       style={{ background: `color-mix(in srgb, ${color} 15%, transparent)`, color }}
     >
       {children}

@@ -24,7 +24,7 @@ import { zoneOfEmployee } from "@/components/depot/summary";
 import { TEAM_SHIRT } from "@/lib/domain/avatar";
 import { applies, ISSUE_STATE, issueStatus, SIZE_KINDS } from "@/lib/domain/equipment";
 import { iso, today } from "@/lib/domain/dates";
-import { nf } from "@/lib/utils";
+import { nf, plural } from "@/lib/utils";
 import { EMPLOYEE_FIELDS, employeeInitial } from "../fields";
 import { LeaveForm } from "../../conges/leave-form";
 
@@ -63,20 +63,20 @@ export function EmployeeDetail({
         <ArrowLeft className="h-4 w-4" /> Équipe
       </Link>
       <Card className="relative mb-6 overflow-hidden print:shadow-none">
-        <div className="absolute inset-x-0 top-0 h-24" style={{ background: `linear-gradient(120deg, ${TEAM_SHIRT[emp.team]}, color-mix(in srgb, ${TEAM_SHIRT[emp.team]} 55%, transparent))` }} />
+        <div className="absolute inset-x-0 top-0 h-20" style={{ background: TEAM_SHIRT[emp.team] }} />
         <div className="relative grid gap-5 px-5 pt-10 pb-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-end">
-          <div className="w-fit rounded-full bg-surface p-1.5 shadow-lg ring-1 ring-line">
+          <div className="w-fit rounded-full bg-surface p-1.5 ring-1 ring-line">
             <Avatar e={emp} size={124} />
           </div>
           <div className="min-w-0">
-            <h1 className="font-display text-3xl leading-tight font-bold">{emp.name}</h1>
+            <h1 className="font-display text-3xl leading-tight font-medium">{emp.name}</h1>
             <p className="mt-0.5 text-muted">{emp.job_title || "Fonction à renseigner"}</p>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge tone={TEAM_TONE[emp.team]}>{TEAMS[emp.team]}</Badge>
               {emp.freelance && <Badge tone="warn">Freelance</Badge>}
               {!emp.active && <Badge>Sorti de l&apos;équipe</Badge>}
               {absentToday ? <ColorBadge color={LEAVE_COLOR[absentToday.type]}>Aujourd&apos;hui : {LEAVE_LABEL[absentToday.type]}</ColorBadge> : emp.active && <Badge tone="ok">Présent aujourd&apos;hui</Badge>}
-              {qAlert > 0 && <Badge tone="bad">{qAlert} qualification(s) à traiter</Badge>}
+              {qAlert > 0 && <Badge tone="bad">{plural(qAlert, "qualification")} à traiter</Badge>}
             </div>
           </div>
           <div className="flex flex-wrap gap-2 print:hidden lg:justify-end">
@@ -110,7 +110,7 @@ export function EmployeeDetail({
             ["Tailles", <b key="sizes">{SIZE_KINDS.map((k) => (emp[k.col] as string | null)?.split(" ")[0] || "—").join(" · ")}</b>],
           ] as [string, React.ReactNode][]).map(([k, v]) => (
             <div key={k} className="min-w-0 bg-surface px-4 py-3">
-              <dt className="text-[11px] font-semibold tracking-wide text-muted uppercase">{k}</dt>
+              <dt className="text-xs text-muted">{k}</dt>
               <dd className="mt-0.5 min-w-0 text-sm">{v || <span className="text-muted">–</span>}</dd>
             </div>
           ))}
@@ -205,7 +205,7 @@ export function EmployeeDetail({
               <div className="grid grid-cols-4 gap-1.5 text-center">
                 {SIZE_KINDS.map((k) => (
                   <div key={k.k} className="rounded-xl bg-surface-2 px-1 py-2">
-                    <p className="font-display text-[15px] leading-tight font-bold">{(emp[k.col] as string | null)?.split(" ")[0] || "—"}</p>
+                    <p className="font-display text-[15px] leading-tight font-medium">{(emp[k.col] as string | null)?.split(" ")[0] || "—"}</p>
                     <p className="text-[11px] text-muted">{k.label}</p>
                   </div>
                 ))}

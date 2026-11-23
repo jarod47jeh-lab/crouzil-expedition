@@ -50,17 +50,17 @@ export function Dialog({
             role="dialog"
             aria-modal="true"
             className={cn(
-              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-line bg-surface shadow-pop sm:rounded-3xl",
+              "relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-line bg-surface shadow-pop sm:rounded-2xl",
               wide ? "sm:max-w-3xl" : "sm:max-w-xl",
             )}
             initial={{ opacity: 0, y: 40, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 420, damping: 34 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
               <div>
-                <h2 className="text-lg font-bold">{title}</h2>
+                <h2 className="text-lg font-medium">{title}</h2>
                 {subtitle && <p className="mt-0.5 text-sm text-muted">{subtitle}</p>}
               </div>
               <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-surface-2" aria-label="Fermer">

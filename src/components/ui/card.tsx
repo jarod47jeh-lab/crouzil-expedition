@@ -12,7 +12,7 @@ export function CardHeader({ title, subtitle, actions, className }: { title: Rea
   return (
     <div className={cn("flex flex-wrap items-start justify-between gap-3 px-5 pt-4 pb-3", className)}>
       <div className="min-w-0">
-        <h2 className="text-[17px] font-bold leading-tight">{title}</h2>
+        <h2 className="text-base font-medium leading-tight">{title}</h2>
         {subtitle && <p className="mt-0.5 text-[13px] text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}

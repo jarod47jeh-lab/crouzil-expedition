@@ -22,7 +22,7 @@ function Thumbs({ label, names, value, make, shirt, onPick, order }: { label: st
         {(order || names.map((_, i) => i)).map((i) => (
           <button key={i} type="button" onClick={() => onPick(i)} aria-pressed={value === i} className={cn("grid justify-items-center gap-0.5 rounded-xl border p-1.5 transition-colors", value === i ? "border-brand bg-brand/5" : "border-line hover:border-brand/50")}>
             <AvatarFace style={make(i)} shirt={shirt} size={46} />
-            <span className="w-full truncate text-center text-[10.5px] leading-tight font-semibold">{names[i]}</span>
+            <span className="w-full truncate text-center text-[11px] leading-tight font-semibold">{names[i]}</span>
           </button>
         ))}
       </div>
@@ -186,8 +186,8 @@ export function AvatarEditor({ emp, value, onChange }: { emp: Employee; value: A
                   className={cn("grid justify-items-center gap-1 rounded-xl border p-2 text-center transition-colors", a.preset === p.id ? "border-brand bg-brand/5" : "border-line hover:border-brand/50")}
                 >
                   <AvatarFace style={p.style} shirt={shirt} size={48} />
-                  <span className="text-[11.5px] leading-tight font-semibold">{p.label}</span>
-                  <span className="text-[10.5px] leading-none text-muted">{p.hint}</span>
+                  <span className="text-xs leading-tight font-semibold">{p.label}</span>
+                  <span className="text-[11px] leading-none text-muted">{p.hint}</span>
                 </button>
               ))}
             </div>

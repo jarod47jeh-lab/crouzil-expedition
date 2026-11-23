@@ -24,7 +24,7 @@ import { addDays, daysBetween, fmtDay, fmtLong, fmtShort, iso, isWorkDay, nextWo
 import { conformity } from "@/lib/domain/errors";
 import { forDashboard } from "@/lib/domain/notes";
 import type { DeliveryNote, Announcement, Asset, AuditEntry, DayMark, DeliveryError, Employee, FreelanceCall, LeaveRequest, Repair, Settings, Task } from "@/lib/types";
-import { cn, nf } from "@/lib/utils";
+import { cn, nf, plural } from "@/lib/utils";
 import { nextDue } from "./parc/fields";
 import { NoteCard } from "./remontees/note-card";
 
@@ -112,9 +112,9 @@ export function HomeView(p: Props) {
         parking: vDown,
       },
       {
-        quais: { lines: deliv.slice(0, 5).map(noteLine), stat: `${deliv.length} consigne(s) pour les départs · 3 rideaux` },
+        quais: { lines: deliv.slice(0, 5).map(noteLine), stat: `${plural(deliv.length, "consigne")} pour les départs · 3 rideaux` },
         vide: { lines: recup.slice(0, 5).map(noteLine), stat: "Retours de fûts et casiers vides" },
-        depose: { lines: [...(errYd.length ? [{ text: `${errYd.length} erreur(s) de livraison hier`, tone: "warn" as const }] : []), ...out(prep)], stat: prep ? `${prep.present}/${prep.total} préparateurs présents` : "Commandes préparées" },
+        depose: { lines: [...(errYd.length ? [{ text: `${plural(errYd.length, "erreur")} de livraison hier`, tone: "warn" as const }] : []), ...out(prep)], stat: prep ? `${prep.present}/${prep.total} préparateurs présents` : "Commandes préparées" },
         bureau: { lines: out(cmd), stat: cmd ? `${cmd.present}/${cmd.total} au Service Commande` : "Prise de commandes" },
         parking: { lines: vehicles.filter((v) => v.state !== "ok").map((v) => ({ text: `${v.name} : ${v.note}`, tone: v.state === "bad" ? ("bad" as const) : ("warn" as const) })), stat: `${vehicles.length - vDown}/${vehicles.length} véhicules disponibles` },
         soft: { stat: "Racks 30 m, 3 niveaux, 6 m de haut" },
@@ -159,29 +159,25 @@ export function HomeView(p: Props) {
   const present = teams.reduce((n, x) => n + x.present, 0), total = teams.reduce((n, x) => n + x.total, 0);
   const kpis = [
     perms.read("remontees") && { label: "Remontées à traiter", value: notesTodo, sub: `${dash.filter((n) => n.level === "attention").length} « Attention » à venir`, tone: notesTodo ? "bad" : "ok", href: "/remontees" },
-    perms.read("conges") && { label: wd.getTime() === t.getTime() ? "Présents aujourd'hui" : `Présents ${fmtDay(wd)}`, value: present, suffix: ` / ${total}`, sub: absToday.length ? `${absToday.length} absent(s)` : "tout le monde est là", tone: "ink", href: "/conges" },
+    perms.read("conges") && { label: wd.getTime() === t.getTime() ? "Présents aujourd'hui" : `Présents ${fmtDay(wd)}`, value: present, suffix: ` / ${total}`, sub: absToday.length ? `${plural(absToday.length, "absent")}` : "tout le monde est là", tone: "ink", href: "/conges" },
     perms.read("conges") && { label: "Congés à valider", value: pending.length, sub: pending.length ? "demandes en attente" : "rien en attente", tone: pending.length ? "warn" : "ok", href: "/conges?tab=demandes" },
-    perms.read("parc") && { label: "Véhicules disponibles", value: vehicles.length - vDown, suffix: ` / ${vehicles.length}`, sub: vDown ? `${vDown} immobilisé(s)` : "aucun immobilisé", tone: vDown ? "bad" : "ok", href: "/parc" },
+    perms.read("parc") && { label: "Véhicules disponibles", value: vehicles.length - vDown, suffix: ` / ${vehicles.length}`, sub: vDown ? `${plural(vDown, "immobilisé")}` : "aucun immobilisé", tone: vDown ? "bad" : "ok", href: "/parc" },
     perms.read("taches") && { label: "Tâches en retard", value: lateTasks.length, sub: `sur ${openTasks.length} ouvertes`, tone: lateTasks.length ? "warn" : "ok", href: "/taches" },
     perms.read("erreurs") && { label: "Conformité du mois", value: confM ? confM.global : null, decimals: 1, suffix: " %", sub: confM ? `objectif ${nf(target)} %` : "volumes non saisis", tone: confM ? (confM.global >= target ? "ok" : "bad") : "ink", href: "/erreurs" },
   ].filter(Boolean) as { label: string; value: number | null; suffix?: string; decimals?: number; sub: string; tone: string; href: string }[];
-  const toneText: Record<string, string> = { ok: "text-ok", warn: "text-warn", bad: "text-bad", ink: "text-ink" };
+  const toneText: Record<string, string> = { ok: "text-ink", warn: "text-warn", bad: "text-bad", ink: "text-ink" };
 
-  const hour = new Date().getHours();
   return (
     <>
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-[12px] font-semibold tracking-[0.1em] text-brand uppercase">{fmtLong(new Date())}</p>
-          <h1 className="mt-1 text-[28px] leading-tight font-extrabold tracking-tight sm:text-[34px]">
-            {hour < 18 ? "Bonjour" : "Bonsoir"}
-            {p.name && `, ${p.name}`}
-          </h1>
+          <p className="text-[13px] text-muted">Service expédition · Ayguesvives</p>
+          <h1 className="mt-1 text-[28px] leading-tight sm:text-[32px]">{fmtLong(new Date())}</h1>
         </div>
         <p className="text-sm text-muted">
           {todos.length ? (
             <>
-              <b className="text-ink">{todos.length} point(s)</b> attendent une décision.
+              <b className="text-ink">{plural(todos.length, "point")}</b> {todos.length > 1 ? "attendent" : "attend"} une décision
             </>
           ) : (
             "Rien n'attend de décision : le dépôt suit le plan."
@@ -195,12 +191,12 @@ export function HomeView(p: Props) {
           <div className="grid min-w-max grid-flow-col auto-cols-[minmax(150px,1fr)] overflow-hidden rounded-2xl border border-line bg-surface sm:min-w-0">
             {kpis.map((k, i) => (
               <Link key={k.label} href={k.href} className={cn("group px-4 py-3.5 transition-colors hover:bg-surface-2/60", i && "border-l border-line")}>
-                <p className="truncate text-[11px] font-semibold tracking-[0.07em] text-muted uppercase">{k.label}</p>
-                <p className={cn("tabular mt-1 font-display text-[28px] leading-none font-bold", toneText[k.tone])}>
+                <p className="truncate text-xs text-muted">{k.label}</p>
+                <p className={cn("tabular mt-1 text-[28px] leading-none font-medium", toneText[k.tone])}>
                   {k.value == null ? "–" : <CountUp value={k.value} decimals={k.decimals} />}
-                  {k.suffix && k.value != null && <span className="text-[16px] text-muted">{k.suffix}</span>}
+                  {k.suffix && k.value != null && <span className="text-base text-muted">{k.suffix}</span>}
                 </p>
-                <p className="mt-1 truncate text-[12px] text-muted">{k.sub}</p>
+                <p className="mt-1 truncate text-xs text-muted">{k.sub}</p>
               </Link>
             ))}
           </div>
@@ -222,28 +218,28 @@ export function HomeView(p: Props) {
         </Card>
 
         {/* À traiter ce matin */}
-        <Card className={cn("min-w-0", todos.length && "border-brand/25 bg-gradient-to-b from-brand/[0.04] to-surface")}>
+        <Card className="min-w-0">
           <CardHeader title="À traiter" subtitle={todos.length ? "Ce qui attend une décision, du plus urgent au moins urgent" : undefined} />
           {todos.length ? (
             <ul className="grid grid-cols-[minmax(0,1fr)] gap-2 px-4 pb-4">
               {todos.slice(0, 7).map((x, i) => (
-                <motion.li className="min-w-0" key={x.key} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.04 * i }}>
+                <motion.li className="min-w-0" key={x.key} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * Math.min(i, 5), duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
                   <Link href={x.href} className="group flex items-center gap-3 rounded-xl border border-line bg-surface p-3 transition-colors hover:border-brand/40">
-                    <span className={cn("grid h-9 w-9 shrink-0 place-items-center rounded-xl", x.tone === "bad" ? "bg-bad/10 text-bad" : x.tone === "warn" ? "bg-warn/12 text-warn" : "bg-info/10 text-info")}>
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-line text-muted">
                       <x.icon className="h-[18px] w-[18px]" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <Badge tone={x.tone}>{x.tag}</Badge>
                       </span>
-                      <span className="mt-1 block truncate text-[14px] font-semibold">{x.title}</span>
+                      <span className="mt-1 block truncate text-sm font-medium">{x.title}</span>
                       {x.sub && <span className="block truncate text-xs text-muted">{x.sub}</span>}
                     </span>
                     <span className="hidden shrink-0 rounded-lg border border-line px-2.5 py-1 text-xs font-semibold group-hover:border-brand/40 group-hover:text-brand sm:inline">{x.cta}</span>
                   </Link>
                 </motion.li>
               ))}
-              {todos.length > 7 && <p className="px-1 text-sm text-muted">et {todos.length - 7} autre(s)</p>}
+              {todos.length > 7 && <p className="px-1 text-sm text-muted">et {plural(todos.length - 7, "autre")}</p>}
             </ul>
           ) : (
             <Empty icon={<Siren className="h-5 w-5" />} title="Rien en attente">
@@ -278,17 +274,14 @@ export function HomeView(p: Props) {
                         </Link>
                       ))}
                   </div>
-                  {x.out.length > 0 && <p className="mt-1 truncate text-xs text-muted">Absent(s) : {x.out.map((e) => e.name).join(", ")}</p>}
-                </div>
-              ))}
-              {!teams.length && <p className="text-sm text-muted">Aucun collaborateur enregistré.</p>}
+                  {x.out.length > 0 && <p className="mt-1 truncate text-xs text-muted">{x.out.length > 1 ? "Absents" : "Absent"} : {x.out.map((e) => e.name).join(", ")}</p>} </div> ))} {!teams.length && <p className="text-sm text-muted">Aucun collaborateur enregistré.</p>}
             </div>
           </Card>
         )}
 
         {perms.read("taches") && (
           <Card>
-            <CardHeader title="To do list" subtitle={`${openTasks.length} tâche(s) ouverte(s)`} actions={<Link href="/taches" className="text-sm font-semibold text-brand">Tout voir</Link>} />
+            <CardHeader title="Tâches" subtitle={`${plural(openTasks.length, "tâche ouverte", "tâches ouvertes")}`} actions={<Link href="/taches" className="text-sm font-semibold text-brand">Tout voir</Link>} />
             <ul className="grid px-5 pb-4">
               {openTasks
                 .slice()

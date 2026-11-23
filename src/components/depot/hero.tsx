@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import { ZONE_META } from "./overview";
 import type { Selection } from "./scene";
 import type { DepotSummary } from "./summary";
@@ -91,8 +91,8 @@ export function SelectionPanel({ s, sel, onClose, className }: { s: DepotSummary
     <Panel className={className} onClose={onClose} kick={m.kick} title={m.name} sub={z.stat}>
       {people.length > 0 && (
         <div>
-          <p className="mb-1.5 text-[11px] font-bold tracking-wide text-muted uppercase">
-            Personnel · {people.filter((p) => p.present).length}/{people.length} présent(s)
+          <p className="mb-1.5 text-xs text-muted">
+            Personnel · {people.filter((p) => p.present).length}/{plural(people.length, "présent")}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {people.map((p) => (
@@ -132,13 +132,13 @@ function Panel({ kick, title, sub, children, onClose, className }: { kick: strin
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
-      transition={{ type: "spring", stiffness: 420, damping: 36 }}
+      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
       className={cn("grid gap-3 rounded-2xl border border-line bg-surface/95 p-4 shadow-pop backdrop-blur", className)}
     >
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold tracking-[0.09em] text-brand uppercase">{kick}</p>
-          <p className="font-display text-lg leading-tight font-bold">{title}</p>
+          <p className="text-[11px] font-semibold text-brand">{kick}</p>
+          <p className="font-display text-lg leading-tight font-medium">{title}</p>
           {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
         </div>
         <button onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line hover:bg-surface-2" aria-label="Fermer la fiche">

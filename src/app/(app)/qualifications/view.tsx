@@ -21,7 +21,7 @@ import { daysBetween, fmtDate, fmtShort, iso, today } from "@/lib/domain/dates";
 import { appliesTo, expiryOf, QUAL_CATEGORIES, QUAL_STATE, QUAL_TEAMS, qualStatus, type QualState } from "@/lib/domain/qualifications";
 import { downloadWorkbook, pct, type Cell, type ExportKind } from "@/lib/exports/workbook";
 import type { Employee, Qualification, QualificationType, Team } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 
 type Tab = "tableau" | "echeances" | "catalogue";
 const TEAM_CHOICES: [string, string][] = [
@@ -128,16 +128,16 @@ function Matrix({ employees, types, quals, canEdit, onCell }: { employees: Emplo
         if (!rows.length || !cols.length) return null;
         return (
           <Card key={g} className="overflow-hidden">
-            <CardHeader title={TEAMS[g]} subtitle={`${rows.length} collaborateur(s) · ${cols.length} qualification(s) suivie(s)${canEdit ? " · cliquez sur une case pour saisir" : ""}`} />
+            <CardHeader title={TEAMS[g]} subtitle={`${plural(rows.length, "collaborateur")} · ${plural(cols.length, "qualification suivie", "qualifications suivies")}${canEdit ? " · cliquez sur une case pour saisir" : ""}`} />
             <div className="max-h-[70dvh] overflow-auto">
               <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr>
                     <th className="sticky top-0 left-0 z-30 min-w-[170px] border-b border-line bg-surface-2 px-3 py-2 text-left text-[11px] font-semibold">Collaborateur</th>
                     {cols.map((ty) => (
-                      <th key={ty.id} className="sticky top-0 z-20 min-w-[96px] border-b border-line bg-surface-2 px-1.5 py-2 text-center align-bottom text-[10.5px] leading-tight font-semibold" title={ty.name}>
+                      <th key={ty.id} className="sticky top-0 z-20 min-w-[96px] border-b border-line bg-surface-2 px-1.5 py-2 text-center align-bottom text-[11px] leading-tight font-semibold" title={ty.name}>
                         <span className="line-clamp-3">{ty.name.replace(/\s*\(.*\)$/, "")}</span>
-                        {ty.required && <span className="mt-0.5 block text-[9.5px] font-bold text-bad">obligatoire</span>}
+                        {ty.required && <span className="mt-0.5 block text-[10px] font-semibold text-bad">obligatoire</span>}
                       </th>
                     ))}
                   </tr>
@@ -158,7 +158,7 @@ function Matrix({ employees, types, quals, canEdit, onCell }: { employees: Emplo
                               type="button"
                               onClick={() => onCell(e, ty, s.last)}
                               title={`${ty.name} · ${QUAL_STATE[s.state].label}${s.expires ? ` · échéance ${fmtDate(s.expires)}` : ""}`}
-                              className={cn("block w-full rounded-md px-1 py-1 text-[10.5px] leading-tight font-bold transition-transform hover:scale-105", STATE_CLS[s.state])}
+                              className={cn("block w-full rounded-md px-1 py-1 text-[11px] leading-tight font-semibold transition-transform", STATE_CLS[s.state])}
                             >
                               {s.state === "none" ? (canEdit ? "+" : "—") : s.state === "missing" ? "Manque" : s.expires ? fmtShort(s.expires) : "Valide"}
                             </button>
@@ -236,8 +236,8 @@ function Catalogue({ types, quals, canEdit }: { types: QualificationType[]; qual
           { key: "pos", header: "#", sort: (r) => r.position, cell: (r) => <span className="text-muted">{r.position}</span>, hideOnMobile: true },
           { key: "name", header: "Qualification", sort: (r) => r.name, cell: (r) => <span className="font-semibold">{r.name}</span> },
           { key: "cat", header: "Catégorie", sort: (r) => r.category, exportValue: (r) => QUAL_CATEGORIES[r.category].label, cell: (r) => <Badge tone={QUAL_CATEGORIES[r.category].tone}>{QUAL_CATEGORIES[r.category].label}</Badge> },
-          { key: "val", header: "Validité", sort: (r) => r.validity_months ?? 999, exportValue: (r) => (r.validity_months ? `${r.validity_months} mois` : "Sans échéance"), cell: (r) => (r.validity_months ? (r.validity_months % 12 ? `${r.validity_months} mois` : `${r.validity_months / 12} an(s)`) : "Sans échéance") },
-          { key: "teams", header: "Pour", hideOnMobile: true, sort: (r) => (r.teams || []).join(","), exportValue: (r) => (r.teams?.length ? r.teams.map((x) => TEAMS[x]).join(", ") : "Tous"), cell: (r) => (r.teams?.length ? r.teams.map((x) => TEAMS[x]).join(", ") : "Tous") },
+          { key: "val", header: "Validité", sort: (r) => r.validity_months ?? 999, exportValue: (r) => (r.validity_months ? `${r.validity_months} mois` : "Sans échéance"), cell: (r) => (r.validity_months ? (r.validity_months % 12 ? `${r.validity_months} mois` : `${plural(r.validity_months / 12, "an")}`) : "Sans échéance") },
+          { key: "teams", header: "Pour", hideOnMobile: true, sort: (r) => (r.teams || []).join(","), exportValue: (r) => (r.teams?.length ? r.teams.map((x) => TEAMS[x]).join(", ") :"Tous"), cell: (r) => (r.teams?.length ? r.teams.map((x) => TEAMS[x]).join(", ") :"Tous") },
           { key: "req", header: "Obligatoire", sort: (r) => +r.required, exportValue: (r) => (r.required ? "Oui" : "Non"), cell: (r) => (r.required ? <Badge tone="bad">Obligatoire</Badge> : <span className="text-muted">Non</span>) },
           { key: "n", header: "Détenteurs", sort: (r) => quals.filter((q) => q.type_id === r.id).length, cell: (r) => new Set(quals.filter((q) => q.type_id === r.id).map((q) => q.employee_id)).size },
           { key: "act", header: "Suivi", sort: (r) => +r.active, exportValue: (r) => (r.active ? "Oui" : "Non"), cell: (r) => (r.active ? "Oui" : <span className="text-muted">Archivé</span>) },

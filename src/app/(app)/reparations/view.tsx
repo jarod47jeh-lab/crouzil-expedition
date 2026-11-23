@@ -20,7 +20,7 @@ import { ASSET_KINDS, REPAIR_CATS, REPAIR_OPEN, REPAIR_STATUS, URGENCIES, URGENC
 import { daysBetween, fmtDate, parse } from "@/lib/domain/dates";
 import { sortRepairs } from "@/lib/domain/repairs";
 import type { Asset, Repair, Settings } from "@/lib/types";
-import { cn, nf } from "@/lib/utils";
+import { cn, nf, plural } from "@/lib/utils";
 import { RepairForm } from "./shared";
 import { EntityForm as AssetEntityForm } from "@/components/ui/entity-form";
 import { ASSET_FIELDS } from "../parc/fields";
@@ -101,11 +101,11 @@ export function RepairCard({ r, i = 0 }: { r: Repair; i?: number }) {
   const age = daysBetween(r.observed_on);
   const k = r.immobilized || r.urgency === "Bloquant" ? "var(--bad)" : r.urgency === "Urgent" ? "var(--warn)" : "var(--line)";
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 10) * 0.04 }} whileHover={{ y: -2 }}>
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 10) * 0.04 }}>
       <Link href={`/reparations/${r.id}`} className="block h-full rounded-2xl border border-line border-l-[5px] bg-surface p-4 shadow-card transition-colors hover:border-brand/40" style={{ borderLeftColor: k }}>
         <div className="flex items-start justify-between gap-2">
-          <p className="font-display leading-tight font-bold">{r.label}</p>
-          <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold text-white" style={{ background: ST_COLOR[r.status] }}>
+          <p className="font-display leading-tight font-medium">{r.label}</p>
+          <span className="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold text-white" style={{ background: ST_COLOR[r.status] }}>
             {REPAIR_STATUS[r.status].label}
           </span>
         </div>
@@ -242,7 +242,7 @@ function ToSend({ repairs, settings }: { repairs: Repair[]; settings: Settings }
     start(async () => {
       const res = await patchRows("repairs", sel, { status: "T" });
       if (!res.ok) return void toast.error(res.error);
-      toast.success(`${sel.length} demande(s) marquée(s) « Transmis »`);
+      toast.success(`${plural(sel.length, "demande marquée", "demandes marquées")} « Transmis »`);
       router.refresh();
     });
 
@@ -275,7 +275,7 @@ function ToSend({ repairs, settings }: { repairs: Repair[]; settings: Settings }
           subtitle={settings.repair_contact_email ? `À : ${settings.repair_contact_email}` : "Ajoutez l'adresse e-mail du destinataire dans les Réglages"}
         />
         <div className="grid gap-3 px-5 pb-5">
-          <textarea readOnly value={text} className="field min-h-[280px] font-mono text-[12.5px]" />
+          <textarea readOnly value={text} className="field min-h-[280px] font-mono text-[13px]" />
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => navigator.clipboard.writeText(text).then(() => toast.success("Message copié"))}>
               <Copy className="h-4 w-4" /> Copier

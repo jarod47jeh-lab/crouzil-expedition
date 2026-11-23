@@ -15,7 +15,7 @@ import { iso, today } from "@/lib/domain/dates";
 import { compressImage } from "@/lib/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Asset, Urgency } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
 import { assetLabel } from "../reparations/shared";
 
 /* Problèmes courants : un toucher remplit le type et la description */
@@ -103,7 +103,7 @@ export function ReportView({ assets, preset }: { assets: Asset[]; preset?: strin
       const res = await addRepairPhoto(id, path);
       if (res.ok) sent++;
     }
-    toast.success(`Signalement enregistré${sent ? ` avec ${sent} photo(s)` : ""}`, { description: chosen ? assetLabel(chosen) : label });
+    toast.success(`Signalement enregistré${sent ? ` avec ${plural(sent, "photo")}` : ""}`, { description: chosen ? assetLabel(chosen) : label });
     router.push(`/reparations/${id}`);
   };
 
@@ -223,8 +223,8 @@ function Step({ n, title, done, children }: { n: number; title: string; done: bo
   return (
     <Card className="mb-3 p-4 sm:p-5">
       <div className="mb-3 flex items-center gap-3">
-        <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-bold transition-colors", done ? "bg-ok text-white" : "bg-surface-2 text-muted")}>{done ? <Check className="h-4 w-4" /> : n}</span>
-        <h2 className="text-[17px] font-bold">{title}</h2>
+        <span className={cn("grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors", done ? "bg-ok text-white" : "bg-surface-2 text-muted")}>{done ? <Check className="h-4 w-4" /> : n}</span>
+        <h2 className="text-base font-medium">{title}</h2>
       </div>
       {children}
     </Card>
